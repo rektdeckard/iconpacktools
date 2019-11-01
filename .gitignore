@@ -23,6 +23,6 @@
 hs_err_pid*
 
 # intelliJ
-.idea
-target
+.idea/
+target/
 *.iml
