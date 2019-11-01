@@ -1,20 +1,29 @@
 package com.tobiasfried.iconpacktools.view
 
+import com.tobiasfried.iconpacktools.controller.DrawableController
+import com.tobiasfried.iconpacktools.controller.DrawableOutput
+import javafx.application.Platform
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.layout.Priority
 import javafx.scene.text.FontWeight
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.io.File
+import kotlin.concurrent.thread
 
 class DrawableView : View("Drawables") {
+
+    private val controller = DrawableController()
 
     private val generateDrawable = SimpleBooleanProperty(true)
     private val generateIconPack = SimpleBooleanProperty(false)
     private val overwriteExisting = SimpleBooleanProperty(false)
+    private var generateProgress = SimpleDoubleProperty(0.0)
 
     private var files = FXCollections.observableArrayList<File>()
     //    private val files = FXCollections.observableArrayList(
@@ -29,19 +38,32 @@ class DrawableView : View("Drawables") {
 
     override val root = borderpane {
         left = vbox(spacing = 8.0) {
-            useMaxHeight = true
             borderpaneConstraints { marginLeftRight(8.0) }
-            label("Files") {
-                style { fontWeight = FontWeight.BOLD }
+
+            hbox {
+                useMaxWidth = true
                 vboxConstraints {
                     marginTop = 8.0
                 }
+                label("Files") {
+                    style { fontWeight = FontWeight.BOLD }
+                    hgrow = Priority.ALWAYS
+                }
+                label {
+                    visibleWhen(files.sizeProperty.isNotEqualTo(0))
+                    bind(files.sizeProperty)
+                }
             }
+
             listview(files) {
+                vgrow = Priority.ALWAYS
                 multiSelect(true)
                 bindSelected(selectedFiles)
+                cellFormat { graphic = label(it.name) }
             }
+
             buttonbar {
+                hgrow = Priority.NEVER
                 button("Add") {
                     action { files.addAll(chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi)) }
                     shortcut("Ctrl+O")
@@ -62,11 +84,11 @@ class DrawableView : View("Drawables") {
                     }
                 }
             }
+
         }
 
         center = vbox(spacing = 8.0) {
-            useMaxHeight = true
-            borderpaneConstraints { marginLeftRight(8.0) }
+            borderpaneConstraints { marginLeftRight(8.0)}
             label("Icon Resource Generator") {
                 style { fontWeight = FontWeight.BOLD }
                 vboxConstraints {
@@ -82,6 +104,7 @@ class DrawableView : View("Drawables") {
                 text("Optionally, you may select the target destination for the resource files.")
             }
             form {
+                vgrow = Priority.ALWAYS
                 hbox(spacing = 32) {
                     fieldset("Output Options") {
                         style {
@@ -119,19 +142,26 @@ class DrawableView : View("Drawables") {
                 }
             }
             buttonbar {
-                style {
-                    alignment = Pos.BOTTOM_RIGHT
-                }
                 button("Generate") {
                     enableWhen(files.sizeProperty.greaterThan(0)
                             .and(generateDrawable.or(generateIconPack)))
+                    action {
+                        thread {
+                            for (i in 1..100) {
+                                Platform.runLater { generateProgress.set(i.toDouble() / 100.0) }
+                                Thread.sleep(15)
+                            }
+                            controller.generateDrawableXML(files, DrawableOutput.DRAWABLE)
+                        }
+                    }
                 }
             }
         }
 
-        bottom = progressbar(0.0) {
+        bottom = progressbar {
             borderpaneConstraints { marginTop = 8.0 }
             useMaxWidth = true
+            bind(generateProgress)
         }
     }
 }
