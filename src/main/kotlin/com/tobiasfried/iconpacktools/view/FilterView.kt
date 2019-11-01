@@ -1,15 +1,21 @@
 package com.tobiasfried.iconpacktools.view
 
+import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
+import com.tobiasfried.iconpacktools.app.Styles.Companion.dropArea
+import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
+import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
+import com.tobiasfried.iconpacktools.controller.FilterFormat
+import com.tobiasfried.iconpacktools.utils.FileNameConverter
+import com.tobiasfried.iconpacktools.utils.PathConverter
 import javafx.beans.binding.Bindings
 import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
-import javafx.scene.text.FontPosture
-import javafx.scene.text.FontWeight
+import javafx.scene.layout.Region
 import tornadofx.*
 import java.io.File
 import java.nio.file.Path
@@ -23,7 +29,9 @@ class FilterView : View("Filters") {
         File(destinationPath.value.toString().trim()).exists()
     }, destinationPath)
 
+    private var dropTarget: Region by singleAssign()
     private var filterFile = SimpleObjectProperty<File>()
+    private val acceptedFiles = listOf("appfilter.xml", "appmap.xml", "theme_resources.xml")
 
     override val root = borderpane {
         center = vbox(spacing = 8.0) {
@@ -32,44 +40,46 @@ class FilterView : View("Filters") {
                 marginLeftRight(8.0)
             }
             label("App Filter Generator") {
-                style { fontWeight = FontWeight.BOLD }
                 vboxConstraints {
                     marginTop = 8.0
                 }
-            }
+            }.addClass(bold)
             textflow {
-                text("This tool will map an existing app filter file to any of the other filter filetypes. ")
+                text("This tool will map an existing app filter file to any of the other filter file formats. ")
                 text("Click or use the drop target to add a filter file. Accepted files include:")
             }
             hbox(20) {
-                style {
-                    fontStyle = FontPosture.ITALIC
-                }
                 text("appfilter.xml")
                 text("appmap.xml")
                 text("theme_resources.xml")
-            }
+            }.addClass(italic)
             textflow {
-                text("By default, the .xml resources will be created in the same file as the last assets added to the list. ")
+                text("By default, the ")
+                text(".xml").addClass(italic)
+                text(" resources will be created in the same file as the last assets added to the list. ")
                 text("Optionally, you may select the target destination for the resource files.")
             }
             form {
                 vgrow = Priority.ALWAYS
                 vbox(spacing = 16) {
                     hbox(spacing = 32) {
-                        fieldset("Input File") {
-                            style {
-                                fontSize = 12.px
-                            }
-                            field {
-                                region { fitToParentWidth(); paddingAll = 8.0; style { baseColor = c("#444444") } }
-                            }
+                        vbox {
+                            vgrow = Priority.ALWAYS
+                            fieldset("Input File") {
+                                minHeight = 200.0
+                                minWidth = 300.0
+                                dropTarget = region {
+                                    useMaxSize = true
+                                    vgrow = Priority.ALWAYS
+                                    label {
+                                        bind(filterFile, true, FileNameConverter())
+                                        alignment = Pos.CENTER
+                                    }
+                                }.addClass(dropArea)
+                            }.addClass(fieldLabel)
                         }
                         separator(Orientation.VERTICAL)
                         fieldset("Output Options") {
-                            style {
-                                fontSize = 12.px
-                            }
                             field {
                                 checkbox("Generate appfilter.xml")
                             }
@@ -82,12 +92,9 @@ class FilterView : View("Filters") {
                             field {
                                 checkbox("Overwrite existing")
                             }
-                        }
+                        }.addClass(fieldLabel)
                         separator(Orientation.VERTICAL)
                         fieldset("Destination") {
-                            style {
-                                fontSize = 12.px
-                            }
                             field {
                                 vbox(spacing = 8) {
                                     togglegroup {
@@ -95,9 +102,10 @@ class FilterView : View("Filters") {
                                             isSelected = true
                                             action {
                                                 specifyPath.set(false)
-                                                if (filterFile.value.exists()) {
-                                                    destinationPath.set(filterFile.value.toPath().parent)
+                                                filterFile.value?.let {
+                                                    if (it.exists()) destinationPath.set(filterFile.value.toPath().parent)
                                                 }
+
                                             }
                                         }
                                         radiobutton("Specify directory") {
@@ -108,12 +116,9 @@ class FilterView : View("Filters") {
                                     }
                                 }
                             }
-                        }
+                        }.addClass(fieldLabel)
                     }
                     fieldset("Target Directory") {
-                        style {
-                            fontSize = 12.px
-                        }
                         field {
                             hgrow = Priority.ALWAYS
                             textfield {
@@ -124,7 +129,7 @@ class FilterView : View("Filters") {
                         label("Enter a valid directory") {
                             visibleWhen(!validDestination)
                         }
-                    }
+                    }.addClass(fieldLabel)
                 }
             }
             buttonbar {
@@ -139,8 +144,40 @@ class FilterView : View("Filters") {
         }
     }
 
+    init {
+        dropTarget.setOnDragOver {
+            if (it.gestureSource != dropTarget && it.dragboard.hasFiles()) {
+                it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+            }
+            it.consume()
+        }
+
+        dropTarget.setOnDragDropped {
+            val dragBoard = it.dragboard
+            if (dragBoard.hasFiles()) {
+                val newFilterFile = dragBoard.files[0]
+                if (acceptedFiles.contains(newFilterFile.name)) {
+                    filterFile.set(dragBoard.files[0])
+                    destinationPath.set(filterFile.value.toPath().parent)
+                }
+                it.isDropCompleted = true
+            } else it.isDropCompleted = false
+
+            it.consume()
+        }
+    }
+
     private fun chooseDestination() {
         val selectedDestination = chooseDirectory("Select Destination", File("/"))
         selectedDestination?.let { destinationPath.set(selectedDestination.toPath()) }
+    }
+
+    private fun getFilterFormat(file: File): FilterFormat {
+        return when (file.name) {
+            "appfilter.xml" -> FilterFormat.APPFILTER
+            "appmap.xml" -> FilterFormat.APPMAP
+            "theme_resources.xml" -> FilterFormat.THEME_RESOURCES
+            else -> FilterFormat.APPFILTER
+        }
     }
 }
