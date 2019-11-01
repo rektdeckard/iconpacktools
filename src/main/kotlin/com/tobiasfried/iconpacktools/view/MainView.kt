@@ -6,7 +6,7 @@ import tornadofx.*
 class MainView : View("Icon Pack Tools") {
 
     init {
-        setStageIcon(Image("compass_alt.png"))
+        setStageIcon(Image("ipt.png"))
     }
 
     override val root = tabpane {
