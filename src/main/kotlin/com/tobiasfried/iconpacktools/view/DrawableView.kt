@@ -1,8 +1,11 @@
 package com.tobiasfried.iconpacktools.view
 
+import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
+import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
+import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
 import com.tobiasfried.iconpacktools.controller.DrawableController
 import com.tobiasfried.iconpacktools.controller.DrawableOutput
-import javafx.application.Platform
+import com.tobiasfried.iconpacktools.utils.PathConverter
 import javafx.beans.binding.Bindings
 import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
@@ -10,12 +13,11 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
-import javafx.scene.control.TextFormatter
+import javafx.scene.control.ListView
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import javafx.scene.text.FontPosture
-import javafx.scene.text.FontWeight
 import javafx.stage.FileChooser
-import javafx.util.StringConverter
 import tornadofx.*
 import java.io.File
 import java.nio.file.Path
@@ -32,13 +34,14 @@ class DrawableView : View("Drawables") {
     private val generateIconPack = SimpleBooleanProperty(false)
     private val overwriteExisting = SimpleBooleanProperty(false)
     private val specifyPath = SimpleBooleanProperty(false)
-    private val destinationPath = SimpleObjectProperty<Path>(PathConverter().fromString("C:\\"))
+    private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
     private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
         File(destinationPath.value.toString().trim()).exists()
     }, destinationPath)
 
     private var generateProgress = SimpleDoubleProperty(0.0)
 
+    private var filesList: ListView<File> by singleAssign()
     private var files = FXCollections.observableArrayList<File>()
     private var selectedFiles = SimpleObjectProperty<File>()
 
@@ -52,9 +55,7 @@ class DrawableView : View("Drawables") {
                 }
                 hbox {
                     hgrow = Priority.ALWAYS
-                    label("Files") {
-                        style { fontWeight = FontWeight.BOLD }
-                    }
+                    label("Files").addClass(bold)
                 }
                 label {
                     visibleWhen(files.sizeProperty.isNotEqualTo(0))
@@ -62,7 +63,7 @@ class DrawableView : View("Drawables") {
                 }
             }
 
-            listview(files) {
+            filesList = listview(files) {
                 vgrow = Priority.ALWAYS
                 multiSelect(true)
                 bindSelected(selectedFiles)
@@ -104,24 +105,21 @@ class DrawableView : View("Drawables") {
         center = vbox(spacing = 16) {
             borderpaneConstraints { marginLeftRight(8.0) }
             label("Icon Resource Generator") {
-                style { fontWeight = FontWeight.BOLD }
-                vboxConstraints {
-                    marginTop = 8.0
-                }
-            }
+                vboxConstraints { marginTop = 8.0 }
+            }.addClass(bold)
             textflow {
                 text("This tool will generate a ")
-                text("drawable.xml") { style { fontStyle = FontPosture.ITALIC } }
+                text("drawable.xml").addClass(italic)
                 text(" and ")
-                text("icon-pack.xml") { style { fontStyle = FontPosture.ITALIC } }
+                text("icon-pack.xml").addClass(italic)
                 text(" file for the provided ")
-                text(".png") { style { fontStyle = FontPosture.ITALIC } }
+                text(".png").addClass(italic)
                 text(" icons. ")
                 text("Use the add button or drag-and-drop your files or directory into the pane on the left, then select your settings below. ")
             }
             textflow {
                 text("By default, the ")
-                text(".xml") { style { fontStyle = FontPosture.ITALIC } }
+                text(".xml").addClass(italic)
                 text(" resources will be created in the same directory as the last assets added to the list. ")
                 text("Optionally, you may select the target destination for the resource files.")
             }
@@ -130,9 +128,6 @@ class DrawableView : View("Drawables") {
                 vbox(spacing = 16) {
                     hbox(spacing = 32) {
                         fieldset("Output Options") {
-                            style {
-                                fontSize = 12.px
-                            }
                             field {
                                 checkbox("Generate drawable.xml").bind(generateDrawable)
                             }
@@ -142,12 +137,9 @@ class DrawableView : View("Drawables") {
                             field {
                                 checkbox("Overwrite existing").bind(overwriteExisting)
                             }
-                        }
+                        }.addClass(fieldLabel)
                         separator(Orientation.VERTICAL)
                         fieldset("Destination") {
-                            style {
-                                fontSize = 12.px
-                            }
                             field {
                                 vbox(spacing = 8) {
                                     togglegroup {
@@ -168,12 +160,9 @@ class DrawableView : View("Drawables") {
                                     }
                                 }
                             }
-                        }
+                        }.addClass(fieldLabel)
                     }
                     fieldset("Target Directory") {
-                        style {
-                            fontSize = 12.px
-                        }
                         field {
                             hgrow = Priority.ALWAYS
                             textfield {
@@ -184,7 +173,7 @@ class DrawableView : View("Drawables") {
                         label("Enter a valid directory") {
                             visibleWhen(!validDestination)
                         }
-                    }
+                    }.addClass(fieldLabel)
                 }
             }
             buttonbar {
@@ -216,22 +205,31 @@ class DrawableView : View("Drawables") {
         }
     }
 
+    init {
+        filesList.setOnDragOver {
+            if (it.gestureSource != filesList && it.dragboard.hasFiles()) {
+                it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+            }
+            it.consume()
+        }
+
+        filesList.setOnDragDropped {
+            val dragBoard = it.dragboard
+            if (dragBoard.hasFiles()) {
+                val newFiles = dragBoard.files
+                files.addAll(newFiles.filter {
+                    newFile -> !files.contains(newFile) && newFile.extension.toLowerCase() == "png" }
+                )
+                destinationPath.set(newFiles[0].toPath().parent)
+                it.isDropCompleted = true
+            } else it.isDropCompleted = false
+
+            it.consume()
+        }
+    }
+
     private fun chooseDestination() {
         val selectedDestination = chooseDirectory("Select Destination", File("/"))
         selectedDestination?.let { destinationPath.set(selectedDestination.toPath()) }
-    }
-}
-
-class PathConverter : StringConverter<Path>() {
-    override fun toString(path: Path?): String {
-        path?.let { return it.toString() }
-        return ""
-    }
-
-    override fun fromString(string: String?): Path {
-        string?.let {
-            return Paths.get(string.trim())
-        }
-        return Paths.get("C:\\")
     }
 }
