@@ -9,10 +9,8 @@ class MainView : View("Icon Pack Tools") {
         setStageIcon(Image("compass_alt.png"))
     }
 
-    private val drawableView: DrawableView by inject()
-
     override val root = tabpane {
-        maxWidth = 1000.0
+        prefWidth = 1000.0
         tab<DrawableView>()
         tab<FilterView>()
         tab("Resource Files")

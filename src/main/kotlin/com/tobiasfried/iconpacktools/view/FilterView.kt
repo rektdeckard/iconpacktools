@@ -3,6 +3,7 @@ package com.tobiasfried.iconpacktools.view
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.layout.Priority
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import tornadofx.*
@@ -11,7 +12,9 @@ class FilterView : View("Filters") {
     override val root = borderpane {
         center = vbox(spacing = 8.0) {
             useMaxHeight = true
-            borderpaneConstraints { marginLeftRight(16.0) }
+            borderpaneConstraints {
+                marginLeftRight(8.0)
+            }
             label("App Filter Generator") {
                 style { fontWeight = FontWeight.BOLD }
                 vboxConstraints {
@@ -35,6 +38,7 @@ class FilterView : View("Filters") {
                 text("Optionally, you may select the target destination for the resource files.")
             }
             form {
+                vgrow = Priority.ALWAYS
                 hbox(spacing = 32) {
                     fieldset("Input File") {
                         style {
@@ -84,9 +88,6 @@ class FilterView : View("Filters") {
                 }
             }
             buttonbar {
-                style {
-                    alignment = Pos.BOTTOM_RIGHT
-                }
                 button("Generate") {
                 }
             }
