@@ -1,5 +1,7 @@
 package com.tobiasfried.iconpacktools.view
 
+import com.sun.javafx.scene.control.skin.ProgressBarSkin
+import com.sun.javafx.scene.control.skin.ProgressIndicatorSkin
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
 import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
@@ -14,8 +16,10 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.scene.control.ListView
+import javafx.scene.control.Skin
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
+import javafx.scene.paint.Paint
 import javafx.scene.text.FontPosture
 import javafx.stage.FileChooser
 import tornadofx.*
@@ -25,7 +29,6 @@ import java.nio.file.Paths
 import java.util.concurrent.Callable
 
 class DrawableView : View("Drawables") {
-
 
     private val updateProgress: (Double) -> Unit = { generateProgress.set(it) }
     private val controller = DrawableController(updateProgress)
@@ -182,25 +185,23 @@ class DrawableView : View("Drawables") {
                             .and(generateDrawable.or(generateIconPack))
                             .and(validDestination))
                     action {
+                        generateProgress.set(0.0)
                         runAsync {
-                            //                            for (i in 1..100) {
-//                                Platform.runLater { generateProgress.set(i.toDouble() / 100.0) }
-//                                Thread.sleep(10)
-//                            }
                             val outputType: DrawableOutput =
                                     if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
                                     else if (generateDrawable.value) DrawableOutput.DRAWABLE
                                     else DrawableOutput.ICON_PACK
-                            controller.generateXML(files, outputType, destinationPath.value)
+                            controller.createXML(files, outputType, destinationPath.value)
                         }
                     }
+                    shortcut("Enter")
                 }
             }
         }
 
         bottom = progressbar {
-            borderpaneConstraints { marginTop = 8.0 }
             useMaxWidth = true
+            borderpaneConstraints { marginTop = 8.0 }
             bind(generateProgress)
         }
     }

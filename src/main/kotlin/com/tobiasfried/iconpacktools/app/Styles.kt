@@ -32,8 +32,8 @@ class Styles : Stylesheet() {
 
         dropArea {
             borderWidth += box(1.px)
-            backgroundColor += Color.LIGHTGRAY
-            borderColor += box(Color.GRAY)
+            backgroundColor += Color.WHITE
+            borderColor += box(Color.LIGHTGRAY)
         }
     }
 }

@@ -19,20 +19,20 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
         it.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
     }
 
-    //    fun generateXML(files: List<File>, type: DrawableOutput, path: Path) {
-    fun generateXML(files: List<File>, type: DrawableOutput, path: Path) {
+    //
+    fun createXML(files: List<File>, type: DrawableOutput, path: Path) {
         when (type) {
-            DRAWABLE -> exportXML(generateDrawableDocument(files), type, path)
-            ICON_PACK -> exportXML(generateIconPackDocument(files), type, path)
+            DRAWABLE -> exportXML(createDrawableDocument(files), type, path)
+            ICON_PACK -> exportXML(createIconPackDocument(files), type, path)
             BOTH -> {
-                exportXML(generateDrawableDocument(files), DRAWABLE, path)
-                exportXML(generateIconPackDocument(files), ICON_PACK, path)
+                exportXML(createDrawableDocument(files), DRAWABLE, path)
+                exportXML(createIconPackDocument(files), ICON_PACK, path)
             }
         }
         updateProgress(1.0)
     }
 
-    private fun generateDrawableDocument(files: List<File>): Document {
+    private fun createDrawableDocument(files: List<File>): Document {
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources")
         val category = doc.createElement("category").also { it.setAttribute("title", "All") }
@@ -50,7 +50,7 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
         return doc
     }
 
-    private fun generateIconPackDocument(files: List<File>): Document {
+    private fun createIconPackDocument(files: List<File>): Document {
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources").also {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
@@ -87,8 +87,8 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
 
     private fun exportXML(document: Document, type: DrawableOutput, path: Path) {
         val filename = if (type == DRAWABLE) "drawable.xml" else "icon-pack.xml"
-        transformer.transform(DOMSource(document), StreamResult(System.out))
         transformer.transform(DOMSource(document), StreamResult(File(path.toString(), filename)))
+//        transformer.transform(DOMSource(document), StreamResult(System.out))
     }
 }
 
