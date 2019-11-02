@@ -5,13 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.tobiasfried</groupId>
-    <artifactId>tornadofx-maven-project</artifactId>
-    <version>1.0</version>
+    <artifactId>iconpacktools</artifactId>
+    <version>0.1.1</version>
     <packaging>jar</packaging>
 
     <properties>
         <kotlin.version>1.2.60</kotlin.version>
         <tornadofx.version>1.7.17</tornadofx.version>
+        <main.class>com.tobiasfried.iconpacktools.app.IconPackTools</main.class>
     </properties>
 
     <dependencies>
@@ -57,6 +58,28 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.6</version>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals> <goal>single</goal> </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>${main.class}</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
