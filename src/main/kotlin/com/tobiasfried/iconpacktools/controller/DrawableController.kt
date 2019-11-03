@@ -11,7 +11,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
+class DrawableController(val updateProgress: (Double, String?) -> Unit) : Controller() {
     private val dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val transformer = TransformerFactory.newInstance().newTransformer().also {
         it.setOutputProperty(OutputKeys.METHOD, "xml")
@@ -29,7 +29,7 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
                 exportXML(createIconPackDocument(files), ICON_PACK, path)
             }
         }
-        updateProgress(1.0)
+        updateProgress(1.0, "COMPLETE")
     }
 
     private fun createDrawableDocument(files: List<File>): Document {
@@ -43,7 +43,7 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
             item.setAttribute("drawable", files[i].nameWithoutExtension)
             resources.appendChild(item)
 
-            updateProgress(i / files.size.toDouble())
+            updateProgress(i / files.size.toDouble(), "$i / ${files.size}")
         }
 
         doc.appendChild(resources)
@@ -79,7 +79,7 @@ class DrawableController(val updateProgress: (Double) -> Unit) : Controller() {
             all.appendChild(item)
             previews.appendChild(doc.importNode(item, true))
 
-            updateProgress(i / files.size.toDouble())
+            updateProgress(i / files.size.toDouble(), "$i / ${files.size}")
         }
 
         return doc

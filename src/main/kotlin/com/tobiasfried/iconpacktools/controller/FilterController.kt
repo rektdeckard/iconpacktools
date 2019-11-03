@@ -15,7 +15,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
+class FilterController(val updateProgress: (Double, String?) -> Unit) : Controller() {
     private val dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val transformer = TransformerFactory.newInstance().newTransformer().also {
         it.setOutputProperty(OutputKeys.METHOD, "xml")
@@ -28,13 +28,24 @@ class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
 
         for (outType in outTypes) {
             val formattedDocument = when (outType) {
-                APPFILTER -> createAppMapDocument(baseDocument)
+                APPFILTER -> throw NoSuchMethodException()
                 APPMAP -> createAppMapDocument(baseDocument)
                 THEME_RESOURCES -> createThemeResourcesDocument(baseDocument)
             }
             exportXML(formattedDocument, path, outType)
         }
-        updateProgress(1.0)
+        updateProgress(1.0, "COMPLETE")
+    }
+
+    fun validateAppFilter(file: File): Boolean {
+        var isValid = false
+        try {
+            val inputSource = InputSource(StringReader(file.readText()))
+            val doc = dBuilder.parse(inputSource)
+            val firstItem = doc.getElementsByTagName("item").item(0)
+            isValid = (firstItem.hasAttributes() && (firstItem.attributes.getNamedItem("component").nodeValue.isNotEmpty()))
+        } catch (e: Exception) { throw e }
+        return isValid
     }
 
     private fun createBaseDocumentFromAppFilter(file: File): BaseFilterDocument {
@@ -59,7 +70,7 @@ class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
                 val appComponent = AppComponent(packageName, activityName, drawable)
                 baseDocument.appComponents.add(appComponent)
             }
-            updateProgress(i / (items.length.toDouble() * 2))
+            updateProgress(i / (items.length.toDouble() * 2), "$i / ${items.length}")
         }
 
         return baseDocument
@@ -81,7 +92,8 @@ class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
             item.setAttribute("name", it.drawable)
             appmap.appendChild(item)
 
-            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0))
+            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0),
+                    "${i + baseDocument.appComponents.size} / ${baseDocument.appComponents.size * 2}")
         }
 
         doc.appendChild(appmap)
@@ -107,7 +119,8 @@ class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
             item.setAttribute("image", it.drawable)
             theme.appendChild(item)
 
-            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0))
+            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0),
+                    "${i + baseDocument.appComponents.size} / ${baseDocument.appComponents.size * 2}")
         }
 
         doc.appendChild(theme)
@@ -115,17 +128,19 @@ class FilterController(val updateProgress: (Double) -> Unit) : Controller() {
     }
 
     private fun exportXML(document: Document, path: Path, outType: FilterFormat) {
-        val filename = when (outType) {
-            APPFILTER -> "appfilter.xml"
-            APPMAP -> "appmap.xml"
-            THEME_RESOURCES -> "theme_resources.xml"
-        }
+//        val filename = when (outType) {
+//            APPFILTER -> "appfilter.xml"
+//            APPMAP -> "appmap.xml"
+//            THEME_RESOURCES -> "theme_resources.xml"
+//        }
 
-        transformer.transform(DOMSource(document), StreamResult(File(path.toString(), filename)))
+        transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
 //        transformer.transform(DOMSource(document), StreamResult(System.out))
     }
 }
 
-enum class FilterFormat {
-    APPFILTER, APPMAP, THEME_RESOURCES
+enum class FilterFormat(val filename: String) {
+    APPFILTER("appfilter.xml"),
+    APPMAP("appmap.xml"),
+    THEME_RESOURCES("theme_resources.xml")
 }

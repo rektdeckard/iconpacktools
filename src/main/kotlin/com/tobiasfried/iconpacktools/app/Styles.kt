@@ -15,6 +15,7 @@ class Styles : Stylesheet() {
         val italic by cssclass()
         val bold by cssclass()
         val dropArea by cssclass()
+        val statusSuccess by cssclass()
     }
 
     init {
@@ -34,6 +35,10 @@ class Styles : Stylesheet() {
             borderWidth += box(1.px)
             backgroundColor += Color.WHITE
             borderColor += box(Color.LIGHTGRAY)
+        }
+
+        statusSuccess {
+            textFill = Color.WHITE
         }
     }
 }
