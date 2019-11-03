@@ -2,6 +2,7 @@ package com.tobiasfried.iconpacktools.view
 
 import com.sun.javafx.scene.control.skin.ProgressBarSkin
 import com.sun.javafx.scene.control.skin.ProgressIndicatorSkin
+import com.tobiasfried.iconpacktools.app.Styles
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
 import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
@@ -13,6 +14,7 @@ import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.scene.control.ListView
@@ -30,7 +32,10 @@ import java.util.concurrent.Callable
 
 class DrawableView : View("Drawables") {
 
-    private val updateProgress: (Double) -> Unit = { generateProgress.set(it) }
+    private val updateProgress: (Double, String?) -> Unit = { progress, message ->
+        generateProgress.set(progress)
+        statusMessage.set(message)
+    }
     private val controller = DrawableController(updateProgress)
 
     private val generateDrawable = SimpleBooleanProperty(true)
@@ -43,6 +48,8 @@ class DrawableView : View("Drawables") {
     }, destinationPath)
 
     private var generateProgress = SimpleDoubleProperty(0.0)
+    private val statusMessage = SimpleStringProperty()
+    private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
     private var filesList: ListView<File> by singleAssign()
     private var files = FXCollections.observableArrayList<File>()
@@ -82,7 +89,7 @@ class DrawableView : View("Drawables") {
                             destinationPath.set(newFiles[0].toPath().parent)
                         }
                         files.addAll(newFiles.filter { !files.contains(it) })
-                        updateProgress(0.0)
+                        updateProgress(0.0, null)
                     }
                     shortcut("Ctrl+O")
                 }
@@ -90,7 +97,7 @@ class DrawableView : View("Drawables") {
                     enableWhen(selectedFiles.isNotNull)
                     action {
                         files.removeAll(selectedFiles.value)
-                        updateProgress(0.0)
+                        updateProgress(0.0, null)
                     }
                     shortcut("Ctrl+X")
                 }
@@ -98,7 +105,7 @@ class DrawableView : View("Drawables") {
                     enableWhen(files.sizeProperty.isNotEqualTo(0))
                     action {
                         files.clear()
-                        updateProgress(0.0)
+                        updateProgress(0.0, null)
                     }
                 }
             }
@@ -120,12 +127,12 @@ class DrawableView : View("Drawables") {
                 text(" icons. ")
                 text("Use the add button or drag-and-drop your files or directory into the pane on the left, then select your settings below. ")
             }
-            textflow {
-                text("By default, the ")
-                text(".xml").addClass(italic)
-                text(" resources will be created in the same directory as the last assets added to the list. ")
-                text("Optionally, you may select the target destination for the resource files.")
-            }
+//            textflow {
+//                text("By default, the ")
+//                text(".xml").addClass(italic)
+//                text(" resources will be created in the same directory as the last assets added to the list. ")
+//                text("Optionally, you may select the target destination for the resource files.")
+//            }
             form {
                 vgrow = Priority.ALWAYS
                 vbox(spacing = 16) {
@@ -158,7 +165,7 @@ class DrawableView : View("Drawables") {
                                         radiobutton("Specify directory") {
                                             action { specifyPath.set(true) }
                                         }.setOnMouseClicked {
-                                           chooseDestination()
+                                            chooseDestination()
                                         }
                                     }
                                 }
@@ -185,24 +192,28 @@ class DrawableView : View("Drawables") {
                             .and(generateDrawable.or(generateIconPack))
                             .and(validDestination))
                     action {
-                        generateProgress.set(0.0)
-                        runAsync {
-                            val outputType: DrawableOutput =
-                                    if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
-                                    else if (generateDrawable.value) DrawableOutput.DRAWABLE
-                                    else DrawableOutput.ICON_PACK
-                            controller.createXML(files, outputType, destinationPath.value)
-                        }
+                        updateProgress(0.0, null)
+                        val outputType: DrawableOutput =
+                                if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
+                                else if (generateDrawable.value) DrawableOutput.DRAWABLE
+                                else DrawableOutput.ICON_PACK
+                        controller.createXML(files, outputType, destinationPath.value)
                     }
                     shortcut("Enter")
                 }
             }
         }
 
-        bottom = progressbar {
-            useMaxWidth = true
+        bottom = stackpane {
             borderpaneConstraints { marginTop = 8.0 }
-            bind(generateProgress)
+            progressbar {
+                useMaxWidth = true
+                bind(generateProgress)
+            }
+            label {
+                bind(statusMessage)
+                toggleClass(Styles.statusSuccess, statusComplete)
+            }
         }
     }
 
@@ -218,10 +229,11 @@ class DrawableView : View("Drawables") {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
                 val newFiles = dragBoard.files
-                files.addAll(newFiles.filter {
-                    newFile -> !files.contains(newFile) && newFile.extension.toLowerCase() == "png" }
-                )
+                files.addAll(newFiles.filter { newFile ->
+                    !files.contains(newFile) && newFile.extension.toLowerCase() == "png"
+                })
                 destinationPath.set(newFiles[0].toPath().parent)
+                updateProgress(0.0, null)
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
