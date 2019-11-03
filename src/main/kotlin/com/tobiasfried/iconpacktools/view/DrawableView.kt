@@ -44,8 +44,8 @@ class DrawableView : View("Drawables") {
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
     private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
-        File(destinationPath.value.toString().trim()).exists()
-    }, destinationPath)
+        !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
+    }, specifyPath, destinationPath)
 
     private var generateProgress = SimpleDoubleProperty(0.0)
     private val statusMessage = SimpleStringProperty()
@@ -199,7 +199,6 @@ class DrawableView : View("Drawables") {
                                 else DrawableOutput.ICON_PACK
                         controller.createXML(files, outputType, destinationPath.value)
                     }
-                    shortcut("Enter")
                 }
             }
         }
