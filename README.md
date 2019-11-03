@@ -13,14 +13,18 @@ A handy utility for Android icon pack creators to generate key assets and resour
 ## Installation
 
 ### Build from source
+Clone the repository into the directory of your choice. Compile and package using Maven:
+```shell
+cd path/to/iconpacktools
+mvn compile package
+java -jar target/iconpacktools-<VERSION>-jar-with-dependencies.jar
+```
 
 ### Binaries
 Download one of the linked binaries:
 
 - [Windows]()
 - [macOS]()
-- Linux
-  - [Arch]()
-  - [Debian/Ubuntu]()
+- Linux [coming soon]
   
 ### Jar
