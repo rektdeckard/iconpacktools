@@ -28,5 +28,5 @@ target/
 *.iml
 
 # gradle
-.gradle
-build
+.gradle/
+build/
