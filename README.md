@@ -30,5 +30,5 @@ Download one of the linked binaries:
 ### Jar
 Download the packaged jar with dependencies. Requires a Java Runtime to be installed on your machine, any jre version above 1.8 should have no problem running it:
 ```bash
-$ java -jar path/to//iconpacktools-<VERSION>-jar-with-dependencies.jar
+$ java -jar path/to/iconpacktools-<VERSION>-jar-with-dependencies.jar
 ```
