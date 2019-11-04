@@ -23,12 +23,12 @@ $ java -jar target/iconpacktools-<VERSION>-jar-with-dependencies.jar
 ### Binaries
 Download one of the linked binaries:
 
-- [Windows]()
-- [macOS]()
+- Windows [coming soon]
+- macOS [coming soon]
 - Linux [coming soon]
   
 ### Jar
-Download the packaged jar with dependencies. Requires a Java Runtime to be installed on your machine, any jre version above 1.8 should have no problem running it:
+Download the most recent packaged jar from the [releases](https://github.com/rektdeckard/iconpacktools/releases) page. Requires a Java Runtime to be installed on your machine, any jre version above 1.7 should have no problem running it:
 ```bash
-$ java -jar path/to//iconpacktools-<VERSION>-jar-with-dependencies.jar
+$ java -jar path/to/iconpacktools-<VERSION>-all.jar
 ```
