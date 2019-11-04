@@ -103,14 +103,17 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
     private fun createThemeResourcesDocument(baseDocument: BaseFilterDocument): Document {
         val doc = dBuilder.newDocument()
         val theme = doc.createElement("Theme").also { it.setAttribute("version", baseDocument.version.toString()) }
-        theme.appendChild(doc.createComment(" SET THESE VALUES ON YOUR OWN "))
-        theme.appendChild(doc.createElement("Label").also { it.setAttribute("value", "YOUR APP NAME") })
-        theme.appendChild(doc.createElement("Wallpaper").also { it.setAttribute("image", "") })
-        theme.appendChild(doc.createElement("LockScreenWallpaper").also { it.setAttribute("image", "") })
-        theme.appendChild(doc.createElement("ThemePreview").also { it.setAttribute("image", "") })
-        theme.appendChild(doc.createElement("ThemePreviewWork").also { it.setAttribute("image", "") })
-        theme.appendChild(doc.createElement("ThemePreviewMenu").also { it.setAttribute("image", "") })
-        theme.appendChild(doc.createElement("DockMenuAppIcon").also { it.setAttribute("selector", "") })
+
+        with (theme) {
+            appendChild(doc.createComment(" SET THESE VALUES ON YOUR OWN "))
+            appendChild(doc.createElement("Label").also { it.setAttribute("value", "YOUR APP NAME") })
+            appendChild(doc.createElement("Wallpaper").also { it.setAttribute("image", "") })
+            appendChild(doc.createElement("LockScreenWallpaper").also { it.setAttribute("image", "") })
+            appendChild(doc.createElement("ThemePreview").also { it.setAttribute("image", "") })
+            appendChild(doc.createElement("ThemePreviewWork").also { it.setAttribute("image", "") })
+            appendChild(doc.createElement("ThemePreviewMenu").also { it.setAttribute("image", "") })
+            appendChild(doc.createElement("DockMenuAppIcon").also { it.setAttribute("selector", "") })
+        }
 
         for (i in 0 until baseDocument.appComponents.size) {
             val it = baseDocument.appComponents[i]
@@ -128,12 +131,6 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
     }
 
     private fun exportXML(document: Document, path: Path, outType: FilterFormat) {
-//        val filename = when (outType) {
-//            APPFILTER -> "appfilter.xml"
-//            APPMAP -> "appmap.xml"
-//            THEME_RESOURCES -> "theme_resources.xml"
-//        }
-
         transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
 //        transformer.transform(DOMSource(document), StreamResult(System.out))
     }
