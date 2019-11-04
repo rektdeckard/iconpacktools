@@ -38,7 +38,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
     }
 
     fun validateAppFilter(file: File): Boolean {
-        var isValid = false
+        val isValid: Boolean
         try {
             val inputSource = InputSource(StringReader(file.readText()))
             val doc = dBuilder.parse(inputSource)
