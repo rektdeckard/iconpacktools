@@ -23,8 +23,8 @@ $ java -jar target/iconpacktools-<VERSION>-jar-with-dependencies.jar
 ### Binaries
 Download one of the linked binaries:
 
-- [Windows]()
-- [macOS]()
+- Windows [coming soon]
+- macOS [coming soon]
 - Linux [coming soon]
   
 ### Jar
