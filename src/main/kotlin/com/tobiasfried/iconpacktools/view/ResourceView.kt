@@ -4,7 +4,9 @@ import javafx.geometry.Orientation
 import tornadofx.*
 
 class ResourceView : View("Resources") {
-    override val root = splitpane(Orientation.VERTICAL) {
+    override val root = splitpane(Orientation.HORIZONTAL) {
+        textarea {  }
+        textarea {  }
         /**
          * FIELDS
          * App Name (string) = "Phosphor Carbon"
