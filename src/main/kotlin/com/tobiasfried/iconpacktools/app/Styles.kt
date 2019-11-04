@@ -25,7 +25,7 @@ class Styles : Stylesheet() {
             fontWeight = FontWeight.BOLD
         }
 
-        fieldLabel { fontSize = 12.px }
+        fieldset and fieldLabel { fontSize = 12.px }
 
         italic { fontStyle = FontPosture.ITALIC }
 

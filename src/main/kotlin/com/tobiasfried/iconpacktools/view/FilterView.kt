@@ -92,7 +92,7 @@ class FilterView : View("Filters") {
                 text("This tool will map an existing ")
                 text("appfilter.xml").addClass(italic)
                 text(" file to either of the other filter file formats: ")
-                text("appfilter.xml").addClass(italic)
+                text("appmap.xml").addClass(italic)
                 text(" or ")
                 text("theme_resources.xml.").addClass(italic)
             }
@@ -112,7 +112,7 @@ class FilterView : View("Filters") {
                     vgrow = Priority.ALWAYS
                     vbox(spacing = 16) {
                         hbox(spacing = 32) {
-                            fieldset("Input File")  {
+                            fieldset("Input File") {
                                 //                            label("Input File") { style { fontSize = 14.px } }.addClass(bold)
                                 vbox(spacing = 8) {
                                     dropTarget = stackpane {
@@ -147,9 +147,9 @@ class FilterView : View("Filters") {
                                             }
                                         }
                                     }.addClass(dropArea)
-//                                buttonbar {
-//                                    button("Choose File") { action { chooseFile() } }
-//                                }
+//                                    buttonbar {
+//                                        button("Choose File") { action { chooseFile() } }
+//                                    }
                                 }
                             }.addClass(fieldLabel)
                             vbox(spacing = 16) {
