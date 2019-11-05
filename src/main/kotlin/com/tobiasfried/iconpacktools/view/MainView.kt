@@ -14,12 +14,11 @@ class MainView : View("Icon Pack Tools") {
     override val root = tabpane {
         prefWidth = 1000.0
         tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
-//        tabMinWidth = 108.0
         hgrow = Priority.ALWAYS
         tab<DrawableView>()
         tab<FilterView>()
-        tab<ResourceView>()
-        tab("Automation")
+        tab("Resources") { isDisable = true }
+        tab("Automation") { isDisable = true }
 
         shortcut("Ctrl+Q") {
             close()
