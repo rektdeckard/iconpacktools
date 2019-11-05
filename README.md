@@ -13,11 +13,11 @@ A handy utility for Android icon pack creators to generate key assets and resour
 ## Installation
 
 ### Build from source
-Clone the repository into the directory of your choice. Compile and package using Maven:
+Clone the repository into the directory of your choice. Compile and package using Gradle:
 ```bash
 $ cd path/to/iconpacktools
-$ mvn compile package
-$ java -jar target/iconpacktools-<VERSION>-jar-with-dependencies.jar
+$ gradle clean build shadowJar
+$ java -jar build\libs\iconpacktools-<VERSION>-all.jar
 ```
 
 ### Binaries
@@ -30,5 +30,5 @@ Download one of the linked binaries:
 ### Jar
 Download the packaged jar with dependencies. Requires a Java Runtime to be installed on your machine, any jre version above 1.8 should have no problem running it:
 ```bash
-$ java -jar path/to//iconpacktools-<VERSION>-jar-with-dependencies.jar
+$ java -jar path/to//iconpacktools-<VERSION>-all.jar
 ```
