@@ -17,7 +17,8 @@ class MainView : View("Icon Pack Tools") {
         hgrow = Priority.ALWAYS
         tab<DrawableView>()
         tab<FilterView>()
-        tab("Resources") { isDisable = true }
+        tab<ResourceView>()
+        tab<DrawableView2>()
         tab("Automation") { isDisable = true }
 
         shortcut("Ctrl+Q") {

@@ -9,18 +9,22 @@ data class BaseFilterDocument(val version: Int = 1) {
     override fun toString(): String {
         val str = StringBuilder()
         deviceDefaults.forEach{
-            str.append(it.packageName)
-            str.append(" # ")
-            str.append(it.drawable)
-            str.append("\n")
+            with (str) {
+                append(it.packageName)
+                append(" # ")
+                append(it.drawable)
+                append("\n")
+            }
         }
         appComponents.forEach {
-            str.append(it.packageName)
-            str.append("/")
-            str.append(it.activityName)
-            str.append(" # ")
-            str.append(it.drawable)
-            str.append("\n")
+            with (str) {
+                append(it.packageName)
+                append("/")
+                append(it.activityName)
+                append(" # ")
+                append(it.drawable)
+                append("\n")
+            }
         }
         return str.toString()
     }

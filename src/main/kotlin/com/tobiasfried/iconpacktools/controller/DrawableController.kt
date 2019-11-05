@@ -1,9 +1,12 @@
 package com.tobiasfried.iconpacktools.controller
 
+import com.sun.org.apache.xerces.internal.parsers.DOMParser
 import com.tobiasfried.iconpacktools.controller.DrawableOutput.*
 import org.w3c.dom.Document
+import org.xml.sax.InputSource
 import tornadofx.*
 import java.io.File
+import java.io.StringReader
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
@@ -92,6 +95,21 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         val filename = if (type == DRAWABLE) "drawable.xml" else "icon-pack.xml"
         transformer.transform(DOMSource(document), StreamResult(File(path.toString(), filename)))
 //        transformer.transform(DOMSource(document), StreamResult(System.out))
+    }
+
+    fun parseDrawableXML(file: File) {
+        val inputSource = InputSource(StringReader(file.readText()))
+        val doc = dBuilder.parse(inputSource)
+        val resources = doc.childNodes
+
+        val resourceMap = HashMap<String, ArrayList<String>>()
+
+//        val x = DOMParser()
+        println(resources)
+        for (i in 0 until resources.length) {
+            val child = resources.item(i)
+//            println(child.localName)
+        }
     }
 }
 
