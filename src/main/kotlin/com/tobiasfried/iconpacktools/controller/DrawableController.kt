@@ -64,13 +64,16 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
             item.appendChild(doc.createTextNode("all"))
             it.appendChild(item)
         }
-        resources.appendChild(doc.createComment(" Filter Categories "))
-        resources.appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
-        resources.appendChild(filters)
-        resources.appendChild(doc.createComment(" All Drawables "))
-        resources.appendChild(all)
-        resources.appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
-        resources.appendChild(previews)
+
+        with (resources) {
+            appendChild(doc.createComment(" Filter Categories "))
+            appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
+            appendChild(filters)
+            appendChild(doc.createComment(" All Drawables "))
+            appendChild(all)
+            appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
+            appendChild(previews)
+        }
         doc.appendChild(resources)
 
         for (i in 0..files.lastIndex) {
