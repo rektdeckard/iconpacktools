@@ -1,7 +1,5 @@
 package com.tobiasfried.iconpacktools.view
 
-import com.sun.javafx.scene.control.skin.ProgressBarSkin
-import com.sun.javafx.scene.control.skin.ProgressIndicatorSkin
 import com.tobiasfried.iconpacktools.app.Styles
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
@@ -17,14 +15,11 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
-import javafx.scene.control.ListView
-import javafx.scene.control.Skin
+import javafx.scene.Node
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
-import javafx.scene.paint.Paint
-import javafx.scene.text.FontPosture
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.io.File
@@ -53,13 +48,16 @@ class DrawableView2 : View("Drawables2") {
     private val statusMessage = SimpleStringProperty()
     private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
-    private var files = FXCollections.observableArrayList(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList())
-//    private var fileTree = Bindings.createObjectBinding<TreeItem<Map<String, List<File>>>>(Callable {
-//        TreeItem(files.groupBy { it.parent })
-//    }, files)
-    private val folders = files.map { it.parent }.distinct().map { File(it) }
-    private var selectedFiles = SimpleObjectProperty<File>()
+    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList().filter { it.isFile })
+    private val folders = Bindings.createObjectBinding(Callable {
+        files.groupBy { File(it.parent) }
+    }, files)
+    private val selectedFiles = SimpleObjectProperty<File>()
     private var filesList: TreeView<File> by singleAssign()
+
+    private val makeTreeNodes: (File) -> Node = {
+        text(it.name)
+    }
 
     override val root = borderpane {
         left = vbox(spacing = 8.0) {
@@ -80,14 +78,23 @@ class DrawableView2 : View("Drawables2") {
             }
 
             filesList = treeview {
-                println(files)
-                println(folders)
                 vgrow = Priority.ALWAYS
                 root = TreeItem(File("All"))
+                isShowRoot = false
+                isEditable = true
+
                 cellFormat { text = it.name }
+
                 populate { node ->
-                    if (node == root) folders else files.filter { it.parent == node.value.name }
+                    val item = node.value
+                    when {
+                        node == root -> folders.value.keys
+                        item is File -> folders.value[item]
+                        else -> null
+                    }
                 }
+
+                bindSelected(selectedFiles)
             }
 
             buttonbar {
@@ -137,12 +144,7 @@ class DrawableView2 : View("Drawables2") {
                 text(" icons. ")
                 text("Use the add button or drag-and-drop your files or directory into the pane on the left, then select your settings below. ")
             }
-//            textflow {
-//                text("By default, the ")
-//                text(".xml").addClass(italic)
-//                text(" resources will be created in the same directory as the last assets added to the list. ")
-//                text("Optionally, you may select the target destination for the resource files.")
-//            }
+
             form {
                 vgrow = Priority.ALWAYS
                 vbox(spacing = 16) {
@@ -237,17 +239,26 @@ class DrawableView2 : View("Drawables2") {
         filesList.setOnDragDropped {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
-                val newFiles = dragBoard.files
-                files.addAll(newFiles.filter { newFile ->
-                    !files.contains(newFile) && newFile.extension.toLowerCase() == "png"
-                })
-                destinationPath.set(newFiles[0].toPath().parent)
-                updateProgress(0.0, null)
+                flattenAndAddFiles(dragBoard.files)
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
             it.consume()
         }
+    }
+
+    private fun flattenAndAddFiles(newFiles: List<File>) {
+        val flattenedFiles = ArrayList<File>()
+        newFiles.forEach { file ->
+            if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
+            else flattenedFiles.add(file)
+        }
+
+        files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+        destinationPath.set(flattenedFiles[0].toPath().parent)
+        updateProgress(0.0, null)
+
+        filesList.refresh()
     }
 
     private fun chooseDestination() {
