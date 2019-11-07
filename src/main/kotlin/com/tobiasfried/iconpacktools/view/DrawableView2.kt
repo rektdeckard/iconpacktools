@@ -16,11 +16,13 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.scene.Node
+import javafx.scene.control.TreeCell
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import javafx.stage.FileChooser
+import sun.reflect.generics.tree.Tree
 import tornadofx.*
 import java.io.File
 import java.nio.file.Path
@@ -94,6 +96,7 @@ class DrawableView2 : View("Drawables2") {
                     }
                 }
 
+//                bindChildren(files) {  }
                 bindSelected(selectedFiles)
             }
 
