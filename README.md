@@ -17,7 +17,7 @@ Clone the repository into the directory of your choice. Compile and package usin
 ```bash
 $ cd path/to/iconpacktools
 $ gradle clean build shadowJar
-$ java -jar build\libs\iconpacktools-<VERSION>-all.jar
+$ java -jar build/libs/iconpacktools-<VERSION>-all.jar
 ```
 ### Binaries
 Download one of the linked binaries:
