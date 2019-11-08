@@ -197,7 +197,7 @@ class DrawableView : View("Drawables") {
                                 if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
                                 else if (generateDrawable.value) DrawableOutput.DRAWABLE
                                 else DrawableOutput.ICON_PACK
-                        controller.createXML(files, outputType, destinationPath.value)
+                        controller.createXML(files, destinationPath.value, overwriteExisting.value, outputType)
                     }
                 }
             }
