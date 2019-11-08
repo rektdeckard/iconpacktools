@@ -105,7 +105,6 @@ class DrawableView : View("Drawables") {
                         updateProgress(0.0, null)
                     }
                 }
-                button("List").action { println(folders.value) }
             }
 
         }
