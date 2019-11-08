@@ -39,6 +39,7 @@ class DrawableView2 : View("Drawables2") {
 
     private val generateDrawable = SimpleBooleanProperty(true)
     private val generateIconPack = SimpleBooleanProperty(false)
+    private val useCategories = SimpleBooleanProperty(false)
     private val overwriteExisting = SimpleBooleanProperty(false)
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
@@ -83,10 +84,8 @@ class DrawableView2 : View("Drawables2") {
                 vgrow = Priority.ALWAYS
                 root = TreeItem(File("All"))
                 isShowRoot = false
-                isEditable = true
 
                 cellFormat { text = it.name }
-
                 populate { node ->
                     val item = node.value
                     when {
@@ -102,7 +101,6 @@ class DrawableView2 : View("Drawables2") {
 
             buttonbar {
                 button("Add") {
-                    hgrow = Priority.ALWAYS
                     action {
                         val newFiles = chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi)
                         if (newFiles.isNotEmpty() && !specifyPath.value) {
@@ -128,6 +126,7 @@ class DrawableView2 : View("Drawables2") {
                         updateProgress(0.0, null)
                     }
                 }
+                button("List").action { println(folders.value) }
             }
 
         }
@@ -160,7 +159,12 @@ class DrawableView2 : View("Drawables2") {
                                 checkbox("Generate icon-pack.xml").bind(generateIconPack)
                             }
                             field {
+                                checkbox("Use directories as category names").bind(useCategories)
+                                tooltip("Group your drawables into directories by category, and the categories will be generated from the directory names. The \"All\" category will be automatically created.")
+                            }
+                            field {
                                 checkbox("Overwrite existing").bind(overwriteExisting)
+                                tooltip("Replaces existing files without confirmation.")
                             }
                         }.addClass(fieldLabel)
                         separator(Orientation.VERTICAL)
@@ -212,7 +216,11 @@ class DrawableView2 : View("Drawables2") {
                                 if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
                                 else if (generateDrawable.value) DrawableOutput.DRAWABLE
                                 else DrawableOutput.ICON_PACK
-                        controller.createXML(files, outputType, destinationPath.value)
+                        if (useCategories.value) {
+                            controller.createCategorizedXML(folders.value, destinationPath.value, overwriteExisting.value, outputType)
+                        } else {
+                            controller.createXML(files, destinationPath.value, overwriteExisting.value, outputType)
+                        }
                     }
                 }
             }
@@ -260,8 +268,6 @@ class DrawableView2 : View("Drawables2") {
         files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
         destinationPath.set(flattenedFiles[0].toPath().parent)
         updateProgress(0.0, null)
-
-        filesList.refresh()
     }
 
     private fun chooseDestination() {
