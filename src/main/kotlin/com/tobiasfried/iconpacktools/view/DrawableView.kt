@@ -1,7 +1,5 @@
 package com.tobiasfried.iconpacktools.view
 
-import com.sun.javafx.scene.control.skin.ProgressBarSkin
-import com.sun.javafx.scene.control.skin.ProgressIndicatorSkin
 import com.tobiasfried.iconpacktools.app.Styles
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
@@ -10,7 +8,6 @@ import com.tobiasfried.iconpacktools.controller.DrawableController
 import com.tobiasfried.iconpacktools.controller.DrawableOutput
 import com.tobiasfried.iconpacktools.utils.PathConverter
 import javafx.beans.binding.Bindings
-import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -18,11 +15,8 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.scene.control.ListView
-import javafx.scene.control.Skin
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
-import javafx.scene.paint.Paint
-import javafx.scene.text.FontPosture
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.io.File

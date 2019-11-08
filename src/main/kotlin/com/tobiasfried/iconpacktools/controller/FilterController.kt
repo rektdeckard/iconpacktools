@@ -9,7 +9,6 @@ import tornadofx.*
 import java.io.File
 import java.io.StringReader
 import java.nio.file.Path
-import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory

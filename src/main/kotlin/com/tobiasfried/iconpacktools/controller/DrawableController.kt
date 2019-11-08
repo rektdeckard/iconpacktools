@@ -1,6 +1,5 @@
 package com.tobiasfried.iconpacktools.controller
 
-import com.sun.org.apache.xerces.internal.parsers.DOMParser
 import com.tobiasfried.iconpacktools.controller.DrawableOutput.*
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
@@ -8,7 +7,6 @@ import tornadofx.*
 import java.io.File
 import java.io.StringReader
 import java.nio.file.Path
-import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
