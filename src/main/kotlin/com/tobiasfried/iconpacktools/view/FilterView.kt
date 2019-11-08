@@ -9,28 +9,20 @@ import com.tobiasfried.iconpacktools.controller.FilterController
 import com.tobiasfried.iconpacktools.controller.FilterFormat
 import com.tobiasfried.iconpacktools.utils.FileNameConverter
 import com.tobiasfried.iconpacktools.utils.PathConverter
-import javafx.application.Platform
 import javafx.beans.binding.Bindings
-import javafx.beans.binding.BooleanBinding
-import javafx.beans.binding.ObjectBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.css.PseudoClass
 import javafx.embed.swing.SwingFXUtils
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
-import javafx.scene.image.ImageView
 import javafx.scene.image.WritableImage
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
-import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import javafx.scene.shape.FillRule
-import javafx.scene.text.FontPosture
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.awt.image.BufferedImage
@@ -38,7 +30,6 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Callable
-import javax.swing.JFileChooser
 import javax.swing.filechooser.FileSystemView
 
 class FilterView : View("Filters") {
@@ -55,7 +46,7 @@ class FilterView : View("Filters") {
 
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
-    private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+    private val validDestination = Bindings.createBooleanBinding(Callable {
         !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
     }, specifyPath, destinationPath)
 
@@ -215,7 +206,7 @@ class FilterView : View("Filters") {
                                 .and(validDestination).and(validFile))
                         action {
                             updateProgress(0.0, null)
-                            controller.createXML(filterFile.value, destinationPath.value, *(outTypes.value))
+                            controller.createXML(filterFile.value, destinationPath.value, overwriteExisting.value, *(outTypes.value))
                         }
                     }
                 }
