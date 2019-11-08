@@ -46,7 +46,7 @@ class DrawableView : View("Drawables2") {
     private val statusMessage = SimpleStringProperty()
     private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
-    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList().filter { it.isFile })
+    private val files = FXCollections.observableArrayList<File>()
     private val folders = Bindings.createObjectBinding(Callable {
         files.groupBy { File(it.parent) }
     }, files)
