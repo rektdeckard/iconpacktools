@@ -215,7 +215,7 @@ class FilterView : View("Filters") {
                                 .and(validDestination).and(validFile))
                         action {
                             updateProgress(0.0, null)
-                            controller.createXML(filterFile.value, destinationPath.value, *(outTypes.value))
+                            controller.createXML(filterFile.value, destinationPath.value, overwriteExisting.value, *(outTypes.value))
                         }
                     }
                 }

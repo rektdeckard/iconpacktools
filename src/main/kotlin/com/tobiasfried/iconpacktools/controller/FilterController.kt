@@ -9,6 +9,7 @@ import tornadofx.*
 import java.io.File
 import java.io.StringReader
 import java.nio.file.Path
+import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -23,7 +24,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         it.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
     }
 
-    fun createXML(file: File, path: Path, vararg outTypes: FilterFormat) {
+    fun createXML(file: File, path: Path, overwrite: Boolean = false, vararg outTypes: FilterFormat) {
         val baseDocument = createBaseDocumentFromAppFilter(file)
 
         for (outType in outTypes) {
@@ -32,9 +33,8 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
                 APPMAP -> createAppMapDocument(baseDocument)
                 THEME_RESOURCES -> createThemeResourcesDocument(baseDocument)
             }
-            exportXML(formattedDocument, path, outType)
+            exportXML(formattedDocument, path, outType, overwrite)
         }
-        updateProgress(1.0, "COMPLETE")
     }
 
     fun validateAppFilter(file: File): Boolean {
@@ -130,9 +130,12 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return doc
     }
 
-    private fun exportXML(document: Document, path: Path, outType: FilterFormat) {
-        transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
+    private fun exportXML(document: Document, path: Path, outType: FilterFormat, overwrite: Boolean) {
 //        transformer.transform(DOMSource(document), StreamResult(System.out))
+        if (overwrite || !File(path.toString(), outType.filename).exists()) {
+            transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
+            updateProgress(1.0, "COMPLETE")
+        } else updateProgress(0.0, "FILE ALREADY EXISTS")
     }
 }
 
