@@ -24,7 +24,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Callable
 
-class DrawableView : View("Drawables2") {
+class DrawableView : View("Drawables") {
 
     private val updateProgress: (Double, String?) -> Unit = { progress, message ->
         generateProgress.set(progress)
