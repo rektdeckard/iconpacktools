@@ -55,7 +55,7 @@ class FilterView : View("Filters") {
 
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
-    private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+    private val validDestination = Bindings.createBooleanBinding(Callable {
         !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
     }, specifyPath, destinationPath)
 

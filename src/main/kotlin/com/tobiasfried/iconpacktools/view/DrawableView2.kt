@@ -7,8 +7,10 @@ import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
 import com.tobiasfried.iconpacktools.controller.DrawableController
 import com.tobiasfried.iconpacktools.controller.DrawableOutput
 import com.tobiasfried.iconpacktools.utils.PathConverter
+import javafx.beans.Observable
 import javafx.beans.binding.Bindings
 import javafx.beans.binding.BooleanBinding
+import javafx.beans.binding.ObjectBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -43,11 +45,11 @@ class DrawableView2 : View("Drawables2") {
     private val overwriteExisting = SimpleBooleanProperty(false)
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
-    private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+    private val validDestination = Bindings.createBooleanBinding(Callable {
         !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
     }, specifyPath, destinationPath)
 
-    private var generateProgress = SimpleDoubleProperty(0.0)
+    private val generateProgress = SimpleDoubleProperty(0.0)
     private val statusMessage = SimpleStringProperty()
     private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
@@ -57,10 +59,6 @@ class DrawableView2 : View("Drawables2") {
     }, files)
     private val selectedFiles = SimpleObjectProperty<File>()
     private var filesList: TreeView<File> by singleAssign()
-
-    private val makeTreeNodes: (File) -> Node = {
-        text(it.name)
-    }
 
     override val root = borderpane {
         left = vbox(spacing = 8.0) {
