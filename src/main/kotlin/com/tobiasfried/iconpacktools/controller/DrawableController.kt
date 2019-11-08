@@ -80,7 +80,7 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
 
         val all = doc.createElement("category").also { it.setAttribute("title", "All") }
         resources.appendChild(all)
-        val flat = folders.values.flatten()
+        val flat = folders.values.flatten().distinctBy { it.name }.sortedBy { it.name }
         for (i in 0..flat.lastIndex){
             val item = doc.createElement("item")
             item.setAttribute("drawable", flat[i].nameWithoutExtension)
@@ -148,7 +148,6 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
 
         folders.entries.forEach { entry ->
-            var done = 0
 
             filters.appendChild(doc.createElement("item").also { it.appendChild(doc.createTextNode(entry.key.name)) })
             val category = doc.createElement("string-array").also { it.setAttribute("name", entry.key.name) }
@@ -156,14 +155,20 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
                 val item = doc.createElement("item")
                 item.appendChild(doc.createTextNode(it.nameWithoutExtension))
                 category.appendChild(item)
-                all.appendChild(item.cloneNode(true))
-                previews.appendChild(item.cloneNode(true))
-
-                done += 1
-                updateProgress(done / count.toDouble(), "$done / $count")
             }
 
             resources.appendChild(category)
+        }
+
+
+        val flat = folders.values.flatten().distinctBy { it.name }.sortedBy { it.name }
+        for (i in 0..flat.lastIndex) {
+            val item = doc.createElement("item")
+            item.appendChild(doc.createTextNode(flat[i].nameWithoutExtension))
+            all.appendChild(item)
+            previews.appendChild(item.cloneNode(true))
+
+            updateProgress(i / count.toDouble(), "$i / $count")
         }
 
         with (resources) {
