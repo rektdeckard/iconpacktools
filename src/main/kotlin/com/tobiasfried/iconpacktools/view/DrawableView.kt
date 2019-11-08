@@ -1,7 +1,5 @@
 package com.tobiasfried.iconpacktools.view
 
-import com.sun.javafx.scene.control.skin.ProgressBarSkin
-import com.sun.javafx.scene.control.skin.ProgressIndicatorSkin
 import com.tobiasfried.iconpacktools.app.Styles
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
@@ -10,7 +8,6 @@ import com.tobiasfried.iconpacktools.controller.DrawableController
 import com.tobiasfried.iconpacktools.controller.DrawableOutput
 import com.tobiasfried.iconpacktools.utils.PathConverter
 import javafx.beans.binding.Bindings
-import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -18,11 +15,8 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Orientation
 import javafx.scene.control.ListView
-import javafx.scene.control.Skin
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
-import javafx.scene.paint.Paint
-import javafx.scene.text.FontPosture
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.io.File
@@ -30,7 +24,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Callable
 
-class DrawableView : View("Drawables") {
+class DrawableView : View("Drawables2") {
 
     private val updateProgress: (Double, String?) -> Unit = { progress, message ->
         generateProgress.set(progress)
@@ -40,20 +34,24 @@ class DrawableView : View("Drawables") {
 
     private val generateDrawable = SimpleBooleanProperty(true)
     private val generateIconPack = SimpleBooleanProperty(false)
+    private val useCategories = SimpleBooleanProperty(false)
     private val overwriteExisting = SimpleBooleanProperty(false)
     private val specifyPath = SimpleBooleanProperty(false)
     private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
-    private val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+    private val validDestination = Bindings.createBooleanBinding(Callable {
         !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
     }, specifyPath, destinationPath)
 
-    private var generateProgress = SimpleDoubleProperty(0.0)
+    private val generateProgress = SimpleDoubleProperty(0.0)
     private val statusMessage = SimpleStringProperty()
     private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
+    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList().filter { it.isFile })
+    private val folders = Bindings.createObjectBinding(Callable {
+        files.groupBy { File(it.parent) }
+    }, files)
+    private val selectedFiles = SimpleObjectProperty<File>()
     private var filesList: ListView<File> by singleAssign()
-    private var files = FXCollections.observableArrayList<File>()
-    private var selectedFiles = SimpleObjectProperty<File>()
 
     override val root = borderpane {
         left = vbox(spacing = 8.0) {
@@ -82,7 +80,6 @@ class DrawableView : View("Drawables") {
 
             buttonbar {
                 button("Add") {
-                    hgrow = Priority.ALWAYS
                     action {
                         val newFiles = chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi)
                         if (newFiles.isNotEmpty() && !specifyPath.value) {
@@ -108,6 +105,7 @@ class DrawableView : View("Drawables") {
                         updateProgress(0.0, null)
                     }
                 }
+                button("List").action { println(folders.value) }
             }
 
         }
@@ -127,12 +125,7 @@ class DrawableView : View("Drawables") {
                 text(" icons. ")
                 text("Use the add button or drag-and-drop your files or directory into the pane on the left, then select your settings below. ")
             }
-//            textflow {
-//                text("By default, the ")
-//                text(".xml").addClass(italic)
-//                text(" resources will be created in the same directory as the last assets added to the list. ")
-//                text("Optionally, you may select the target destination for the resource files.")
-//            }
+
             form {
                 vgrow = Priority.ALWAYS
                 vbox(spacing = 16) {
@@ -145,7 +138,12 @@ class DrawableView : View("Drawables") {
                                 checkbox("Generate icon-pack.xml").bind(generateIconPack)
                             }
                             field {
+                                checkbox("Use directories as category names").bind(useCategories)
+                                tooltip("Group your drawables into directories by category, and the categories will be generated from the directory names. The \"All\" category will be automatically created.")
+                            }
+                            field {
                                 checkbox("Overwrite existing").bind(overwriteExisting)
+                                tooltip("Replaces existing files without confirmation.")
                             }
                         }.addClass(fieldLabel)
                         separator(Orientation.VERTICAL)
@@ -197,7 +195,11 @@ class DrawableView : View("Drawables") {
                                 if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
                                 else if (generateDrawable.value) DrawableOutput.DRAWABLE
                                 else DrawableOutput.ICON_PACK
-                        controller.createXML(files, outputType, destinationPath.value)
+                        if (useCategories.value) {
+                            controller.createCategorizedXML(folders.value, destinationPath.value, overwriteExisting.value, outputType)
+                        } else {
+                            controller.createXML(files, destinationPath.value, overwriteExisting.value, outputType)
+                        }
                     }
                 }
             }
@@ -227,17 +229,24 @@ class DrawableView : View("Drawables") {
         filesList.setOnDragDropped {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
-                val newFiles = dragBoard.files
-                files.addAll(newFiles.filter { newFile ->
-                    !files.contains(newFile) && newFile.extension.toLowerCase() == "png"
-                })
-                destinationPath.set(newFiles[0].toPath().parent)
-                updateProgress(0.0, null)
+                flattenAndAddFiles(dragBoard.files)
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
             it.consume()
         }
+    }
+
+    private fun flattenAndAddFiles(newFiles: List<File>) {
+        val flattenedFiles = ArrayList<File>()
+        newFiles.forEach { file ->
+            if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
+            else flattenedFiles.add(file)
+        }
+
+        files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+        destinationPath.set(flattenedFiles[0].toPath().parent)
+        updateProgress(0.0, null)
     }
 
     private fun chooseDestination() {
