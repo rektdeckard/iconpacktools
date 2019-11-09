@@ -81,11 +81,14 @@ class DrawableView : View("Drawables") {
             buttonbar {
                 button("Add") {
                     action {
-                        val newFiles = chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi)
+                        val newFiles = arrayListOf<File>()
+                        if (!useCategories.value) {
+                            newFiles.addAll(chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi))
+                        } else chooseDirectory("Select Icon Directories", null)?.let { newFiles.add(it) }
                         if (newFiles.isNotEmpty() && !specifyPath.value) {
                             destinationPath.set(newFiles[0].toPath().parent)
                         }
-                        files.addAll(newFiles.filter { !files.contains(it) })
+                        flattenAndAddFiles(newFiles)
                         updateProgress(0.0, null)
                     }
                     shortcut("Ctrl+O")
@@ -237,14 +240,16 @@ class DrawableView : View("Drawables") {
     }
 
     private fun flattenAndAddFiles(newFiles: List<File>) {
-        val flattenedFiles = ArrayList<File>()
-        newFiles.forEach { file ->
-            if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
-            else flattenedFiles.add(file)
-        }
+        if (newFiles.isNotEmpty()) {
+            val flattenedFiles = ArrayList<File>()
+            newFiles.forEach { file ->
+                if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
+                else flattenedFiles.add(file)
+            }
 
-        files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
-        destinationPath.set(flattenedFiles[0].toPath().parent)
+            files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+            destinationPath.set(flattenedFiles[0].toPath().parent)
+        }
         updateProgress(0.0, null)
     }
 
