@@ -13,6 +13,7 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
+import javafx.collections.ObservableList
 import javafx.geometry.Orientation
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
@@ -47,10 +48,11 @@ class DrawableView2 : View("Drawables2") {
     private val statusMessage = SimpleStringProperty()
     private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
-    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList().filter { it.isFile })
-    private val folders = Bindings.createObjectBinding(Callable {
-        files.groupBy { File(it.parent) }
-    }, files)
+    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList())
+    private val folders = FXCollections.observableHashMap<File, List<File>>()
+//    private val folders = Bindings.createObjectBinding(Callable {
+//        files.groupBy { it.parentFile }
+//    }, files)
     private val selectedFiles = SimpleObjectProperty<File>()
     private var filesList: TreeView<File> by singleAssign()
 
@@ -81,13 +83,11 @@ class DrawableView2 : View("Drawables2") {
                 populate { node ->
                     val item = node.value
                     when {
-                        node == root -> folders.value.keys
-                        item is File -> folders.value[item]
+                        node == root -> folders.keys
+                        item is File -> folders[item]
                         else -> null
                     }
                 }
-
-//                bindChildren(files) {  }
                 bindSelected(selectedFiles)
             }
 
@@ -118,7 +118,7 @@ class DrawableView2 : View("Drawables2") {
                         updateProgress(0.0, null)
                     }
                 }
-                button("List").action { println(folders.value) }
+                button("List").action { println(folders) }
             }
 
         }
@@ -209,7 +209,7 @@ class DrawableView2 : View("Drawables2") {
                                 else if (generateDrawable.value) DrawableOutput.DRAWABLE
                                 else DrawableOutput.ICON_PACK
                         if (useCategories.value) {
-                            controller.createCategorizedXML(folders.value, destinationPath.value, overwriteExisting.value, outputType)
+//                            controller.createCategorizedXML(folders.value, destinationPath.value, overwriteExisting.value, outputType)
                         } else {
                             controller.createXML(files, destinationPath.value, overwriteExisting.value, outputType)
                         }
@@ -242,7 +242,8 @@ class DrawableView2 : View("Drawables2") {
         filesList.setOnDragDropped {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
-                flattenAndAddFiles(dragBoard.files)
+//                flattenAndAddFiles(dragBoard.files)
+                mapFiles(dragBoard.files)
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
@@ -257,9 +258,20 @@ class DrawableView2 : View("Drawables2") {
             else flattenedFiles.add(file)
         }
 
-        files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+        files.addAll(flattenedFiles.filter { !files.contains(it) })
         destinationPath.set(flattenedFiles[0].toPath().parent)
         updateProgress(0.0, null)
+    }
+
+    private fun mapFiles(newFiles: List<File>) {
+        val flat = ArrayList<File>()
+        newFiles.forEach {
+            when {
+                it.isDirectory -> flat.addAll(it.walkTopDown().toList().filter { file -> file.isFile })
+                else -> flat.add(it)
+            }
+        }
+        folders.putAll(newFiles.groupBy { it.parentFile })
     }
 
     private fun chooseDestination() {
