@@ -93,6 +93,8 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
     }
 
     private fun createIconPackDocument(files: List<File>): Document {
+        val sorted = files.sortedBy { it.name }
+
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources").also {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
@@ -118,13 +120,13 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         }
         doc.appendChild(resources)
 
-        for (i in 0..files.lastIndex) {
+        for (i in 0..sorted.lastIndex) {
             val item = doc.createElement("item")
-            item.appendChild(doc.createTextNode(files[i].nameWithoutExtension))
+            item.appendChild(doc.createTextNode(sorted[i].nameWithoutExtension))
             all.appendChild(item)
             previews.appendChild(doc.importNode(item, true))
 
-            updateProgress(i / files.size.toDouble(), "$i / ${files.size}")
+            updateProgress(i / sorted.size.toDouble(), "$i / ${sorted.size}")
         }
 
         return doc
