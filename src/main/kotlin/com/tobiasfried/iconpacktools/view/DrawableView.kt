@@ -5,13 +5,11 @@ import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
 import com.tobiasfried.iconpacktools.app.Styles.Companion.italic
 import com.tobiasfried.iconpacktools.controller.DrawableController
-import com.tobiasfried.iconpacktools.controller.DrawableOutput
 import com.tobiasfried.iconpacktools.utils.PathConverter
 import javafx.geometry.Orientation
 import javafx.scene.control.ListView
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
-import javafx.stage.FileChooser
 import tornadofx.*
 import java.io.File
 

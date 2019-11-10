@@ -3,13 +3,11 @@ package com.tobiasfried.iconpacktools.controller
 import com.tobiasfried.iconpacktools.controller.DrawableOutput.*
 import javafx.beans.binding.Bindings
 import javafx.beans.binding.BooleanBinding
-import javafx.beans.binding.ObjectBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
-import javafx.collections.ObservableList
 import javafx.stage.FileChooser
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
