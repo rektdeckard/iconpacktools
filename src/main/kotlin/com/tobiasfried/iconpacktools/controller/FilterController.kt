@@ -2,20 +2,58 @@ package com.tobiasfried.iconpacktools.controller
 
 import com.tobiasfried.iconpacktools.controller.FilterFormat.*
 import com.tobiasfried.iconpacktools.model.AppComponent
-import com.tobiasfried.iconpacktools.model.BaseFilterDocument
+import com.tobiasfried.iconpacktools.model.FilterDocumentModel
+import javafx.beans.binding.Bindings
+import javafx.beans.binding.BooleanBinding
+import javafx.beans.binding.ObjectBinding
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.stage.FileChooser
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
 import tornadofx.*
 import java.io.File
 import java.io.StringReader
 import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.Callable
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-class FilterController(val updateProgress: (Double, String?) -> Unit) : Controller() {
+class FilterController : Controller() {
+    val generateAppMap = SimpleBooleanProperty(true)
+    val generateThemeResources = SimpleBooleanProperty(true)
+    val overwriteExisting = SimpleBooleanProperty(false)
+
+    val specifyPath = SimpleBooleanProperty(false)
+    val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
+    val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+        !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
+    }, specifyPath, destinationPath)
+
+    val generateProgress = SimpleDoubleProperty(0.0)
+    val statusMessage = SimpleStringProperty()
+    val statusComplete: BooleanBinding = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
+    val validFile = SimpleBooleanProperty(true)
+
+    val filterFile = SimpleObjectProperty<File>()
+    val acceptedFiles = listOf(APPFILTER.filename)
+    private val outTypes: ObjectBinding<Array<FilterFormat>> = Bindings.createObjectBinding<Array<FilterFormat>>(Callable {
+        // TODO: this is ugly. Better way to do this?
+        if (generateAppMap.value && generateThemeResources.value) {
+            arrayOf(APPMAP, THEME_RESOURCES)
+        } else if (generateAppMap.value) {
+            arrayOf(APPMAP)
+        } else if (generateThemeResources.value) {
+            arrayOf(THEME_RESOURCES)
+        } else arrayOf()
+    }, generateAppMap, generateThemeResources)
+
     private val dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val transformer = TransformerFactory.newInstance().newTransformer().also {
         it.setOutputProperty(OutputKeys.METHOD, "xml")
@@ -23,8 +61,56 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         it.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
     }
 
-    fun createXML(file: File, path: Path, overwrite: Boolean = false, vararg outTypes: FilterFormat) {
-        val baseDocument = createBaseDocumentFromAppFilter(file)
+    fun chooseFile() {
+        val files = chooseFile("Select App Filter File", arrayOf(FileChooser.ExtensionFilter("XML", "*.xml")), FileChooserMode.Single)
+        if (files.isNotEmpty() && acceptedFiles.contains(files[0].name)) {
+            validateFile(files[0])
+        }
+    }
+
+    fun useCurrentDirectory() {
+        specifyPath.set(false)
+        filterFile.value?.let {
+            if (it.exists()) destinationPath.set(filterFile.value.toPath().parent)
+        }
+        updateProgress()
+    }
+
+    fun useSpecifiedDirectory() {
+        specifyPath.set(true)
+        updateProgress()
+    }
+
+    fun validateFile(file: File) {
+        try {
+            validateAppFilter(file)
+            filterFile.set(file)
+            destinationPath.set(filterFile.value.toPath().parent)
+            updateProgress()
+            validFile.set(true)
+        } catch (e: Exception) {
+            updateProgress()
+            validFile.set(false)
+        }
+    }
+
+    fun chooseDestination() {
+        val selectedDestination = chooseDirectory("Select Destination", File("/"))
+        selectedDestination?.let { destinationPath.set(selectedDestination.toPath()) }
+    }
+
+    fun generate() {
+        updateProgress()
+        createXML(*(outTypes.value))
+    }
+
+    private fun updateProgress(progress: Double = 0.0, message: String? = null) {
+        generateProgress.set(progress)
+        statusMessage.set(message)
+    }
+
+    private fun createXML(vararg outTypes: FilterFormat) {
+        val baseDocument = createBaseDocumentFromAppFilter()
 
         for (outType in outTypes) {
             val formattedDocument = when (outType) {
@@ -32,11 +118,11 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
                 APPMAP -> createAppMapDocument(baseDocument)
                 THEME_RESOURCES -> createThemeResourcesDocument(baseDocument)
             }
-            exportXML(formattedDocument, path, outType, overwrite)
+            exportXML(formattedDocument, outType)
         }
     }
 
-    fun validateAppFilter(file: File): Boolean {
+    private fun validateAppFilter(file: File): Boolean {
         val isValid: Boolean
         try {
             val inputSource = InputSource(StringReader(file.readText()))
@@ -47,10 +133,10 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return isValid
     }
 
-    private fun createBaseDocumentFromAppFilter(file: File): BaseFilterDocument {
-        val baseDocument = BaseFilterDocument()
+    private fun createBaseDocumentFromAppFilter(): FilterDocumentModel {
+        val baseDocument = FilterDocumentModel()
 
-        val inputSource = InputSource(StringReader(file.readText()))
+        val inputSource = InputSource(StringReader(filterFile.value.readText()))
         val doc = dBuilder.parse(inputSource)
         val items = doc.getElementsByTagName("item")
 
@@ -75,9 +161,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return baseDocument
     }
 
-//    private fun createAppFilterDocument(baseDocument: BaseFilterDocument): Document {}
-
-    private fun createAppMapDocument(baseDocument: BaseFilterDocument): Document {
+    private fun createAppMapDocument(baseDocument: FilterDocumentModel): Document {
         val doc = dBuilder.newDocument()
         val appmap = doc.createElement("appmap")
         val version = doc.createElement("version")
@@ -99,7 +183,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return doc
     }
 
-    private fun createThemeResourcesDocument(baseDocument: BaseFilterDocument): Document {
+    private fun createThemeResourcesDocument(baseDocument: FilterDocumentModel): Document {
         val doc = dBuilder.newDocument()
         val theme = doc.createElement("Theme").also { it.setAttribute("version", baseDocument.version.toString()) }
 
@@ -129,12 +213,11 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return doc
     }
 
-    private fun exportXML(document: Document, path: Path, outType: FilterFormat, overwrite: Boolean) {
-//        transformer.transform(DOMSource(document), StreamResult(System.out))
-        if (overwrite || !File(path.toString(), outType.filename).exists()) {
-            transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
+    private fun exportXML(document: Document, outType: FilterFormat) {
+        if (overwriteExisting.value || !File(destinationPath.value.toString(), outType.filename).exists()) {
+            transformer.transform(DOMSource(document), StreamResult(File(destinationPath.value.toString(), outType.filename)))
             updateProgress(1.0, "COMPLETE")
-        } else updateProgress(0.0, "FILE ALREADY EXISTS")
+        } else updateProgress(message = "FILE ALREADY EXISTS")
     }
 }
 

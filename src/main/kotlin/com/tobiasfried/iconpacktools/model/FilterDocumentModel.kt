@@ -2,7 +2,7 @@ package com.tobiasfried.iconpacktools.model
 
 import java.lang.StringBuilder
 
-data class BaseFilterDocument(val version: Int = 1) {
+data class FilterDocumentModel(val version: Int = 1) {
     var deviceDefaults = arrayListOf<AppComponent>()
     var appComponents = arrayListOf<AppComponent>()
 
