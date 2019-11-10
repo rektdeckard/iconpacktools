@@ -19,6 +19,7 @@ class MainView : View("Icon Pack Tools") {
         tab<FilterView>()
         tab("Resources") { isDisable = true }
         tab("Automation") { isDisable = true }
+//        tab<AboutView>()
 
         shortcut("Ctrl+Q") {
             close()
