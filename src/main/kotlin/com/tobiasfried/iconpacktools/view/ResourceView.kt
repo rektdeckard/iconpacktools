@@ -1,17 +1,14 @@
 package com.tobiasfried.iconpacktools.view
 
-import com.tobiasfried.iconpacktools.controller.DrawableController
+import com.tobiasfried.iconpacktools.model.ResourceModel
 import javafx.geometry.Orientation
 import tornadofx.*
-import java.io.File
 
 class ResourceView : View("Resources") {
-    val doNothing: (Double, String?) -> Unit = {_d, _s -> Unit}
-    val controller = DrawableController(doNothing)
-    val file = File("C:\\Users\\Tobias Fried\\Dropbox\\Personal\\code\\Android\\Phosphor\\carbon\\src\\main\\assets\\drawable.xml")
+    val model: ResourceModel by inject()
 
     override val root = splitpane(Orientation.HORIZONTAL) {
-        button("Test") { action { controller.parseDrawableXML(file)} }
+        textarea {  }
         textarea {  }
         /**
          * FIELDS

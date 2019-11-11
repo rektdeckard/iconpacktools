@@ -3,10 +3,7 @@ package com.tobiasfried.iconpacktools.app
 import javafx.scene.paint.Color
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
-import tornadofx.Stylesheet
-import tornadofx.box
-import tornadofx.cssclass
-import tornadofx.px
+import tornadofx.*
 
 class Styles : Stylesheet() {
     companion object {
@@ -16,6 +13,7 @@ class Styles : Stylesheet() {
         val bold by cssclass()
         val dropArea by cssclass()
         val statusSuccess by cssclass()
+        val heroImage by cssclass()
     }
 
     init {
@@ -39,6 +37,10 @@ class Styles : Stylesheet() {
 
         statusSuccess {
             textFill = Color.WHITE
+        }
+
+        heroImage {
+            backgroundColor += c("#1E213F")
         }
     }
 }

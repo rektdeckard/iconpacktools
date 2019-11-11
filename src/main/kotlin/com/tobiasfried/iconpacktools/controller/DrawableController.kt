@@ -1,19 +1,49 @@
 package com.tobiasfried.iconpacktools.controller
 
 import com.tobiasfried.iconpacktools.controller.DrawableOutput.*
+import javafx.beans.binding.Bindings
+import javafx.beans.binding.BooleanBinding
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.collections.FXCollections
+import javafx.stage.FileChooser
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
 import tornadofx.*
 import java.io.File
 import java.io.StringReader
 import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.Callable
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-class DrawableController(val updateProgress: (Double, String?) -> Unit) : Controller() {
+class DrawableController : Controller() {
+    val generateDrawable = SimpleBooleanProperty(true)
+    val generateIconPack = SimpleBooleanProperty(false)
+    val useCategories = SimpleBooleanProperty(false)
+    val overwriteExisting = SimpleBooleanProperty(false)
+    val specifyPath = SimpleBooleanProperty(false)
+    val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
+    val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
+        !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
+    }, specifyPath, destinationPath)
+
+    val generateProgress = SimpleDoubleProperty(0.0)
+    val statusMessage = SimpleStringProperty()
+    val statusComplete: BooleanBinding = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
+
+    val files = FXCollections.observableArrayList<File>()!!
+    private val folders = Bindings.createObjectBinding(Callable {
+        files.groupBy { File(it.parent) }
+    }, files)
+    val selectedFiles = SimpleObjectProperty<File>()
+
     private val dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val transformer = TransformerFactory.newInstance().newTransformer().also {
         it.setOutputProperty(OutputKeys.METHOD, "xml")
@@ -21,30 +51,93 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         it.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
     }
 
-    //
-    fun createXML(files: List<File>, path: Path, overwrite: Boolean = false, type: DrawableOutput) {
+    fun selectFiles() {
+        val newFiles = arrayListOf<File>()
+        if (!useCategories.value) {
+            newFiles.addAll(chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi))
+        } else chooseDirectory("Select Icon Directories", null)?.let { newFiles.add(it) }
+        if (newFiles.isNotEmpty() && !specifyPath.value) {
+            destinationPath.set(newFiles[0].toPath().parent)
+        }
+        flattenAndAddFiles(newFiles)
+        updateProgress()
+    }
+
+    fun flattenAndAddFiles(newFiles: List<File>) {
+        if (newFiles.isNotEmpty()) {
+            val flat = ArrayList<File>()
+            newFiles.forEach { file ->
+                if (file.isDirectory) flat.addAll(file.walkTopDown().toList().filter { it.isFile })
+                else flat.add(file)
+            }
+
+            files.addAll(flat.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+            destinationPath.set(flat[0].toPath().parent)
+        }
+        updateProgress()
+    }
+
+    fun removeSelected() {
+        files.removeAll(selectedFiles.value)
+        updateProgress()
+    }
+
+    fun clearFiles() {
+        files.clear()
+        updateProgress()
+    }
+
+    fun chooseDestination() {
+        val selectedDestination = chooseDirectory("Select Destination", File("/"))
+        selectedDestination?.let { destinationPath.set(selectedDestination.toPath()) }
+    }
+
+    fun useCurrentDirectory() {
+        specifyPath.set(false)
+        if (files.isNotEmpty()) {
+            destinationPath.set(files[files.lastIndex].toPath().parent)
+        }
+    }
+
+    fun generate() {
+        updateProgress()
+        val outType: DrawableOutput =
+                if (generateDrawable.value && generateIconPack.value) BOTH
+                else if (generateDrawable.value) DRAWABLE
+                else ICON_PACK
+        if (useCategories.value) {
+            createCategorizedXML(outType)
+        } else createXML(outType)
+    }
+
+    private fun updateProgress(progress: Double = 0.0, message: String? = null) {
+        generateProgress.set(progress)
+        statusMessage.set(message)
+    }
+
+    private fun createXML(type: DrawableOutput) {
         when (type) {
-            DRAWABLE -> exportXML(createDrawableDocument(files), path, overwrite, type)
-            ICON_PACK -> exportXML(createIconPackDocument(files), path, overwrite, type)
+            DRAWABLE -> exportXML(createDrawableDocument(), type)
+            ICON_PACK -> exportXML(createIconPackDocument(), type)
             BOTH -> {
-                exportXML(createDrawableDocument(files), path, overwrite, DRAWABLE)
-                exportXML(createIconPackDocument(files), path, overwrite, ICON_PACK)
+                exportXML(createDrawableDocument(), DRAWABLE)
+                exportXML(createIconPackDocument(), ICON_PACK)
             }
         }
     }
 
-    fun createCategorizedXML(folders: Map<File, List<File>>, path: Path, overwrite: Boolean = false, type: DrawableOutput) {
+    private fun createCategorizedXML(type: DrawableOutput) {
         when (type) {
-            DRAWABLE -> exportXML(createCategorizedDrawableDocument(folders), path, overwrite, type)
-            ICON_PACK -> exportXML(createCategorizedIconPackDocument(folders), path, overwrite, type)
+            DRAWABLE -> exportXML(createCategorizedDrawableDocument(), type)
+            ICON_PACK -> exportXML(createCategorizedIconPackDocument(), type)
             BOTH -> {
-                exportXML(createCategorizedDrawableDocument(folders), path, overwrite, DRAWABLE)
-                exportXML(createCategorizedIconPackDocument(folders), path, overwrite, ICON_PACK)
+                exportXML(createCategorizedDrawableDocument(), DRAWABLE)
+                exportXML(createCategorizedIconPackDocument(), ICON_PACK)
             }
         }
     }
 
-    private fun createDrawableDocument(files: List<File>): Document {
+    private fun createDrawableDocument(): Document {
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources")
         val category = doc.createElement("category").also { it.setAttribute("title", "All") }
@@ -62,13 +155,13 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         return doc
     }
 
-    private fun createCategorizedDrawableDocument(folders: Map<File, List<File>>): Document {
-        val count = folders.values.flatten().size
+    private fun createCategorizedDrawableDocument(): Document {
+        val count = folders.value.values.flatten().size
 
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources")
 
-        folders.entries.forEach { entry ->
+        folders.value.entries.forEach { entry ->
             val category = doc.createElement("category").also { it.setAttribute("title", entry.key.name) }
             resources.appendChild(category)
             entry.value.forEach {
@@ -80,8 +173,8 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
 
         val all = doc.createElement("category").also { it.setAttribute("title", "All") }
         resources.appendChild(all)
-        val flat = folders.values.flatten()
-        for (i in 0..flat.lastIndex){
+        val flat = folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }
+        for (i in 0..flat.lastIndex) {
             val item = doc.createElement("item")
             item.setAttribute("drawable", flat[i].nameWithoutExtension)
             resources.appendChild(item)
@@ -92,7 +185,9 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         return doc
     }
 
-    private fun createIconPackDocument(files: List<File>): Document {
+    private fun createIconPackDocument(): Document {
+        val sorted = files.sortedBy { it.name }
+
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources").also {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
@@ -107,7 +202,7 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
             it.appendChild(item)
         }
 
-        with (resources) {
+        with(resources) {
             appendChild(doc.createComment(" Filter Categories "))
             appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
             appendChild(filters)
@@ -118,20 +213,20 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         }
         doc.appendChild(resources)
 
-        for (i in 0..files.lastIndex) {
+        for (i in 0..sorted.lastIndex) {
             val item = doc.createElement("item")
-            item.appendChild(doc.createTextNode(files[i].nameWithoutExtension))
+            item.appendChild(doc.createTextNode(sorted[i].nameWithoutExtension))
             all.appendChild(item)
             previews.appendChild(doc.importNode(item, true))
 
-            updateProgress(i / files.size.toDouble(), "$i / ${files.size}")
+            updateProgress(i / sorted.size.toDouble(), "$i / ${sorted.size}")
         }
 
         return doc
     }
 
-    private fun createCategorizedIconPackDocument(folders: Map<File, List<File>>): Document {
-        val count = folders.values.flatten().size
+    private fun createCategorizedIconPackDocument(): Document {
+        val count = folders.value.values.flatten().size
 
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources").also {
@@ -139,7 +234,7 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
             it.setAttribute("tools:ignore", "MissingTranslation")
         }
         val filters = doc.createElement("string-array").also { it.setAttribute("name", "icon_filters") }
-        with (resources) {
+        with(resources) {
             appendChild(doc.createComment(" Filter Categories "))
             appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
             appendChild(filters)
@@ -147,8 +242,7 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         val previews = doc.createElement("string-array").also { it.setAttribute("name", "icons_preview") }
         val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
 
-        folders.entries.forEach { entry ->
-            var done = 0
+        folders.value.entries.forEach { entry ->
 
             filters.appendChild(doc.createElement("item").also { it.appendChild(doc.createTextNode(entry.key.name)) })
             val category = doc.createElement("string-array").also { it.setAttribute("name", entry.key.name) }
@@ -156,17 +250,23 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
                 val item = doc.createElement("item")
                 item.appendChild(doc.createTextNode(it.nameWithoutExtension))
                 category.appendChild(item)
-                all.appendChild(item.cloneNode(true))
-                previews.appendChild(item.cloneNode(true))
-
-                done += 1
-                updateProgress(done / count.toDouble(), "$done / $count")
             }
 
             resources.appendChild(category)
         }
 
-        with (resources) {
+
+        val flat = folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }
+        for (i in 0..flat.lastIndex) {
+            val item = doc.createElement("item")
+            item.appendChild(doc.createTextNode(flat[i].nameWithoutExtension))
+            all.appendChild(item)
+            previews.appendChild(item.cloneNode(true))
+
+            updateProgress(i / count.toDouble(), "$i / $count")
+        }
+
+        with(resources) {
             appendChild(doc.createComment(" All Drawables "))
             appendChild(all)
             appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
@@ -177,11 +277,10 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
         return doc
     }
 
-    private fun exportXML(document: Document, path: Path, overwrite: Boolean, type: DrawableOutput) {
-//        transformer.transform(DOMSource(document), StreamResult(System.out))
+    private fun exportXML(document: Document, type: DrawableOutput) {
         val filename = if (type == DRAWABLE) "drawable.xml" else "icon-pack.xml"
-        if (overwrite || !File(path.toString(), filename).exists()) {
-            transformer.transform(DOMSource(document), StreamResult(File(path.toString(), filename)))
+        if (overwriteExisting.value || !File(destinationPath.value.toString(), filename).exists()) {
+            transformer.transform(DOMSource(document), StreamResult(File(destinationPath.value.toString(), filename)))
             updateProgress(1.0, "COMPLETE")
         } else updateProgress(0.0, "FILE ALREADY EXISTS")
     }
@@ -193,11 +292,9 @@ class DrawableController(val updateProgress: (Double, String?) -> Unit) : Contro
 
         val resourceMap = HashMap<String, ArrayList<String>>()
 
-//        val x = DOMParser()
         println(resources)
         for (i in 0 until resources.length) {
             val child = resources.item(i)
-//            println(child.localName)
         }
     }
 }

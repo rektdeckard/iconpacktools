@@ -1,9 +1,15 @@
 package com.tobiasfried.iconpacktools.utils
 
+import com.tobiasfried.iconpacktools.model.AppComponent
+import com.tobiasfried.iconpacktools.model.FilterDocument
 import javafx.util.StringConverter
+import org.w3c.dom.Document
+import org.xml.sax.InputSource
 import java.io.File
+import java.io.StringReader
 import java.nio.file.Path
 import java.nio.file.Paths
+import javax.xml.parsers.DocumentBuilder
 
 class PathConverter : StringConverter<Path>() {
     override fun toString(path: Path?): String {

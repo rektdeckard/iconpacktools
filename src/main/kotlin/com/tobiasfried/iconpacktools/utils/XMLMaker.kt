@@ -1,21 +1,18 @@
-package com.tobiasfried.iconpacktools.controller
+package com.tobiasfried.iconpacktools.utils
 
-import com.tobiasfried.iconpacktools.controller.FilterFormat.*
 import com.tobiasfried.iconpacktools.model.AppComponent
-import com.tobiasfried.iconpacktools.model.BaseFilterDocument
+import com.tobiasfried.iconpacktools.model.FilterDocument
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
-import tornadofx.*
 import java.io.File
 import java.io.StringReader
-import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-class FilterController(val updateProgress: (Double, String?) -> Unit) : Controller() {
+class XMLMaker(val updateProgress: (Double, String?) -> Unit) {
     private val dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val transformer = TransformerFactory.newInstance().newTransformer().also {
         it.setOutputProperty(OutputKeys.METHOD, "xml")
@@ -23,20 +20,8 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         it.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
     }
 
-    fun createXML(file: File, path: Path, overwrite: Boolean = false, vararg outTypes: FilterFormat) {
-        val baseDocument = createBaseDocumentFromAppFilter(file)
-
-        for (outType in outTypes) {
-            val formattedDocument = when (outType) {
-                APPFILTER -> throw NoSuchMethodException()
-                APPMAP -> createAppMapDocument(baseDocument)
-                THEME_RESOURCES -> createThemeResourcesDocument(baseDocument)
-            }
-            exportXML(formattedDocument, path, outType, overwrite)
-        }
-    }
-
     fun validateAppFilter(file: File): Boolean {
+        updateProgress(0.0, null)
         val isValid: Boolean
         try {
             val inputSource = InputSource(StringReader(file.readText()))
@@ -47,8 +32,8 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return isValid
     }
 
-    private fun createBaseDocumentFromAppFilter(file: File): BaseFilterDocument {
-        val baseDocument = BaseFilterDocument()
+    fun createFilterDocumentFromAppFilter(file: File): FilterDocument {
+        val baseDocument = FilterDocument()
 
         val inputSource = InputSource(StringReader(file.readText()))
         val doc = dBuilder.parse(inputSource)
@@ -69,15 +54,13 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
                 val appComponent = AppComponent(packageName, activityName, drawable)
                 baseDocument.appComponents.add(appComponent)
             }
-            updateProgress(i / (items.length.toDouble() * 2), "$i / ${items.length}")
+            updateProgress(i / (items.length.toDouble()), "$i / ${items.length}")
         }
 
         return baseDocument
     }
 
-//    private fun createAppFilterDocument(baseDocument: BaseFilterDocument): Document {}
-
-    private fun createAppMapDocument(baseDocument: BaseFilterDocument): Document {
+    fun createAppMapDocument(baseDocument: FilterDocument): Document {
         val doc = dBuilder.newDocument()
         val appmap = doc.createElement("appmap")
         val version = doc.createElement("version")
@@ -99,7 +82,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return doc
     }
 
-    private fun createThemeResourcesDocument(baseDocument: BaseFilterDocument): Document {
+    fun createThemeResourcesDocument(baseDocument: FilterDocument): Document {
         val doc = dBuilder.newDocument()
         val theme = doc.createElement("Theme").also { it.setAttribute("version", baseDocument.version.toString()) }
 
@@ -129,17 +112,7 @@ class FilterController(val updateProgress: (Double, String?) -> Unit) : Controll
         return doc
     }
 
-    private fun exportXML(document: Document, path: Path, outType: FilterFormat, overwrite: Boolean) {
-//        transformer.transform(DOMSource(document), StreamResult(System.out))
-        if (overwrite || !File(path.toString(), outType.filename).exists()) {
-            transformer.transform(DOMSource(document), StreamResult(File(path.toString(), outType.filename)))
-            updateProgress(1.0, "COMPLETE")
-        } else updateProgress(0.0, "FILE ALREADY EXISTS")
+    fun export(document: Document, outFile: File) {
+        transformer.transform(DOMSource(document), StreamResult(outFile))
     }
-}
-
-enum class FilterFormat(val filename: String) {
-    APPFILTER("appfilter.xml"),
-    APPMAP("appmap.xml"),
-    THEME_RESOURCES("theme_resources.xml")
 }
