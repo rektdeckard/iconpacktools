@@ -2,6 +2,6 @@ package com.tobiasfried.iconpacktools.model
 
 import tornadofx.*
 
-class ResourceViewModel(values: Map<String, List<>>) : ViewModel() {
+class ResourceModel(values: Map<String, List<String>>) : ViewModel() {
 
 }

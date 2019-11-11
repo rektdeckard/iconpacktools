@@ -1,9 +1,12 @@
 package com.tobiasfried.iconpacktools.view
 
+import com.tobiasfried.iconpacktools.model.ResourceModel
 import javafx.geometry.Orientation
 import tornadofx.*
 
 class ResourceView : View("Resources") {
+    val model: ResourceModel by inject()
+
     override val root = splitpane(Orientation.HORIZONTAL) {
         textarea {  }
         textarea {  }

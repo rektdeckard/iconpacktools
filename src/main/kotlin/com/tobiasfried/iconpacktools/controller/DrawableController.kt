@@ -65,14 +65,14 @@ class DrawableController : Controller() {
 
     fun flattenAndAddFiles(newFiles: List<File>) {
         if (newFiles.isNotEmpty()) {
-            val flattenedFiles = ArrayList<File>()
+            val flat = ArrayList<File>()
             newFiles.forEach { file ->
-                if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
-                else flattenedFiles.add(file)
+                if (file.isDirectory) flat.addAll(file.walkTopDown().toList().filter { it.isFile })
+                else flat.add(file)
             }
 
-            files.addAll(flattenedFiles.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
-            destinationPath.set(flattenedFiles[0].toPath().parent)
+            files.addAll(flat.filter { !files.contains(it) && it.extension.toLowerCase() == "png" })
+            destinationPath.set(flat[0].toPath().parent)
         }
         updateProgress()
     }
