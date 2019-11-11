@@ -13,7 +13,7 @@ import javafx.scene.layout.Region
 import javafx.scene.paint.Paint
 import tornadofx.*
 
-class FilterMapperView : View("Filter Mapper") {
+class FilterMapperView : View("Filters") {
     private val controller: FilterMapperController by inject()
     private var dropTarget: Region by singleAssign()
 
