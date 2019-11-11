@@ -79,10 +79,15 @@ class FilterEditorView : View("Filter Editor") {
                 vgrow = Priority.ALWAYS
                 hgrow = Priority.ALWAYS
             }
-            isEditable = true
-            column("Package", AppComponent::packageName)
-            column("Activity", AppComponent::activityName)
-            column("Drawable", AppComponent::drawable)
+            enableCellEditing()
+            enableDirtyTracking()
+            regainFocusAfterEdit()
+            isTableMenuButtonVisible = true
+            isFocusTraversable = true
+
+            column("Package", AppComponent::packageName).makeEditable()
+            column("Activity", AppComponent::activityName).makeEditable()
+            column("Drawable", AppComponent::drawable).makeEditable()
         }
 
         bottom = vbox(spacing = 8) {

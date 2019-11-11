@@ -54,9 +54,8 @@ class XMLMaker(val updateProgress: (Double, String?) -> Unit) {
                 val appComponent = AppComponent(packageName, activityName, drawable)
                 baseDocument.appComponents.add(appComponent)
             }
-            updateProgress(i / (items.length.toDouble()), "$i / ${items.length}")
+            updateProgress((i + 1) / (items.length.toDouble()), "${i + 1} / ${items.length}")
         }
-
         return baseDocument
     }
 
@@ -74,8 +73,8 @@ class XMLMaker(val updateProgress: (Double, String?) -> Unit) {
             item.setAttribute("name", it.drawable)
             appmap.appendChild(item)
 
-            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0),
-                    "${i + baseDocument.appComponents.size} / ${baseDocument.appComponents.size * 2}")
+            updateProgress((i + 1) / baseDocument.appComponents.size.toDouble(),
+                    "${(i + 1)} / ${baseDocument.appComponents.size}")
         }
 
         doc.appendChild(appmap)
@@ -104,8 +103,8 @@ class XMLMaker(val updateProgress: (Double, String?) -> Unit) {
             item.setAttribute("image", it.drawable)
             theme.appendChild(item)
 
-            updateProgress((i + baseDocument.appComponents.size) / (baseDocument.appComponents.size * 2.0),
-                    "${i + baseDocument.appComponents.size} / ${baseDocument.appComponents.size * 2}")
+            updateProgress((i + 1) / baseDocument.appComponents.size.toDouble(),
+                    "${i + 1} / ${baseDocument.appComponents.size}")
         }
 
         doc.appendChild(theme)
