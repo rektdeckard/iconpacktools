@@ -7,6 +7,7 @@ import com.tobiasfried.iconpacktools.controller.FilterEditorController
 import com.tobiasfried.iconpacktools.controller.FilterMapperController
 import com.tobiasfried.iconpacktools.model.AppComponent
 import com.tobiasfried.iconpacktools.utils.FileNameConverter
+import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
@@ -72,7 +73,7 @@ class FilterEditorView : View("Filter Editor") {
             }
         }
 
-        center = tableview(controller.filterDocumentModel.appComponents) {
+        center = tableview(controller.filterDocumentModel.select { it.appComponents }) {
             borderpaneConstraints {
                 marginTop = 16.0
                 marginLeftRight(8.0)
@@ -82,6 +83,7 @@ class FilterEditorView : View("Filter Editor") {
             enableCellEditing()
             enableDirtyTracking()
             regainFocusAfterEdit()
+            smartResize()
             isTableMenuButtonVisible = true
             isFocusTraversable = true
 
@@ -127,9 +129,9 @@ class FilterEditorView : View("Filter Editor") {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
                 val newFilterFile = dragBoard.files[0]
-                if (controller.acceptedFiles.contains(newFilterFile.name)) {
+//                if (controller.acceptedFiles.contains(newFilterFile.name)) {
                     controller.validateFile(newFilterFile)
-                }
+//                }
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
