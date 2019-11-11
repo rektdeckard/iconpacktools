@@ -13,8 +13,8 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
-import javafx.collections.ObservableList
 import javafx.geometry.Orientation
+import javafx.scene.control.ListView
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.input.TransferMode
@@ -28,32 +28,7 @@ import java.util.concurrent.Callable
 
 class DrawableView2 : View("Drawables2") {
 
-    private val updateProgress: (Double, String?) -> Unit = { progress, message ->
-        generateProgress.set(progress)
-        statusMessage.set(message)
-    }
-    private val controller = DrawableController(updateProgress)
-
-    private val generateDrawable = SimpleBooleanProperty(true)
-    private val generateIconPack = SimpleBooleanProperty(false)
-    private val useCategories = SimpleBooleanProperty(false)
-    private val overwriteExisting = SimpleBooleanProperty(false)
-    private val specifyPath = SimpleBooleanProperty(false)
-    private val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
-    private val validDestination = Bindings.createBooleanBinding(Callable {
-        !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
-    }, specifyPath, destinationPath)
-
-    private val generateProgress = SimpleDoubleProperty(0.0)
-    private val statusMessage = SimpleStringProperty()
-    private val statusComplete = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
-
-    private val files = FXCollections.observableArrayList<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\test").walkTopDown().toList())
-    private val folders = FXCollections.observableHashMap<File, List<File>>()
-//    private val folders = Bindings.createObjectBinding(Callable {
-//        files.groupBy { it.parentFile }
-//    }, files)
-    private val selectedFiles = SimpleObjectProperty<File>()
+    private val controller: DrawableController by inject()
     private var filesList: TreeView<File> by singleAssign()
 
     override val root = borderpane {
@@ -69,8 +44,8 @@ class DrawableView2 : View("Drawables2") {
                     label("Files").addClass(bold)
                 }
                 label {
-                    visibleWhen(files.sizeProperty.isNotEqualTo(0))
-                    bind(files.sizeProperty)
+                    visibleWhen(controller.files.sizeProperty.isNotEqualTo(0))
+                    bind(controller.files.sizeProperty)
                 }
             }
 
@@ -80,45 +55,31 @@ class DrawableView2 : View("Drawables2") {
                 isShowRoot = false
 
                 cellFormat { text = it.name }
+
                 populate { node ->
                     val item = node.value
                     when {
-                        node == root -> folders.keys
-                        item is File -> folders[item]
+                        node == root -> controller.folders.value.keys
+                        item is File -> controller.folders.value[item]
                         else -> null
                     }
                 }
-                bindSelected(selectedFiles)
             }
 
             buttonbar {
                 button("Add") {
-                    action {
-                        val newFiles = chooseFile("Select Icons", arrayOf(FileChooser.ExtensionFilter("PNG", "*.png")), FileChooserMode.Multi)
-                        if (newFiles.isNotEmpty() && !specifyPath.value) {
-                            destinationPath.set(newFiles[0].toPath().parent)
-                        }
-                        files.addAll(newFiles.filter { !files.contains(it) })
-                        updateProgress(0.0, null)
-                    }
+                    action { controller.selectFiles() }
                     shortcut("Ctrl+O")
                 }
                 button("Remove") {
-                    enableWhen(selectedFiles.isNotNull)
-                    action {
-                        files.removeAll(selectedFiles.value)
-                        updateProgress(0.0, null)
-                    }
+                    enableWhen(controller.selectedFiles.isNotNull)
+                    action { controller.removeSelected() }
                     shortcut("Ctrl+X")
                 }
                 button("Clear") {
-                    enableWhen(files.sizeProperty.isNotEqualTo(0))
-                    action {
-                        files.clear()
-                        updateProgress(0.0, null)
-                    }
+                    enableWhen(controller.files.sizeProperty.isNotEqualTo(0))
+                    action { controller.clearFiles() }
                 }
-                button("List").action { println(folders) }
             }
 
         }
@@ -145,17 +106,17 @@ class DrawableView2 : View("Drawables2") {
                     hbox(spacing = 32) {
                         fieldset("Output Options") {
                             field {
-                                checkbox("Generate drawable.xml").bind(generateDrawable)
+                                checkbox("Generate drawable.xml").bind(controller.generateDrawable)
                             }
                             field {
-                                checkbox("Generate icon-pack.xml").bind(generateIconPack)
+                                checkbox("Generate icon-pack.xml").bind(controller.generateIconPack)
                             }
                             field {
-                                checkbox("Use directories as category names").bind(useCategories)
+                                checkbox("Use directories as category names").bind(controller.useCategories)
                                 tooltip("Group your drawables into directories by category, and the categories will be generated from the directory names. The \"All\" category will be automatically created.")
                             }
                             field {
-                                checkbox("Overwrite existing").bind(overwriteExisting)
+                                checkbox("Overwrite existing").bind(controller.overwriteExisting)
                                 tooltip("Replaces existing files without confirmation.")
                             }
                         }.addClass(fieldLabel)
@@ -166,17 +127,12 @@ class DrawableView2 : View("Drawables2") {
                                     togglegroup {
                                         radiobutton("Current directory") {
                                             isSelected = true
-                                            action {
-                                                specifyPath.set(false)
-                                                if (files.isNotEmpty()) {
-                                                    destinationPath.set(files[files.lastIndex].toPath().parent)
-                                                }
-                                            }
+                                            action { controller.useCurrentDirectory() }
                                         }
                                         radiobutton("Specify directory") {
-                                            action { specifyPath.set(true) }
+                                            action { controller.specifyPath.set(true) }
                                         }.setOnMouseClicked {
-                                            chooseDestination()
+                                            controller.chooseDestination()
                                         }
                                     }
                                 }
@@ -187,33 +143,22 @@ class DrawableView2 : View("Drawables2") {
                         field {
                             hgrow = Priority.ALWAYS
                             textfield {
-                                bind(destinationPath, false, PathConverter())
-                                enableWhen(specifyPath)
+                                bind(controller.destinationPath, false, PathConverter())
+                                enableWhen(controller.specifyPath)
                             }
                         }
                         label("Enter a valid directory") {
-                            visibleWhen(!validDestination)
+                            visibleWhen(!controller.validDestination)
                         }
                     }.addClass(fieldLabel)
                 }
             }
             buttonbar {
                 button("Generate") {
-                    enableWhen(files.sizeProperty.greaterThan(0)
-                            .and(generateDrawable.or(generateIconPack))
-                            .and(validDestination))
-                    action {
-                        updateProgress(0.0, null)
-                        val outputType: DrawableOutput =
-                                if (generateDrawable.value && generateIconPack.value) DrawableOutput.BOTH
-                                else if (generateDrawable.value) DrawableOutput.DRAWABLE
-                                else DrawableOutput.ICON_PACK
-                        if (useCategories.value) {
-//                            controller.createCategorizedXML(folders.value, destinationPath.value, overwriteExisting.value, outputType)
-                        } else {
-                            controller.createXML(files, destinationPath.value, overwriteExisting.value, outputType)
-                        }
-                    }
+                    enableWhen(controller.files.sizeProperty.greaterThan(0)
+                            .and(controller.generateDrawable.or(controller.generateIconPack))
+                            .and(controller.validDestination))
+                    action { controller.generate() }
                 }
             }
         }
@@ -222,11 +167,11 @@ class DrawableView2 : View("Drawables2") {
             borderpaneConstraints { marginTop = 8.0 }
             progressbar {
                 useMaxWidth = true
-                bind(generateProgress)
+                bind(controller.generateProgress)
             }
             label {
-                bind(statusMessage)
-                toggleClass(Styles.statusSuccess, statusComplete)
+                bind(controller.statusMessage)
+                toggleClass(Styles.statusSuccess, controller.statusComplete)
             }
         }
     }
@@ -242,8 +187,7 @@ class DrawableView2 : View("Drawables2") {
         filesList.setOnDragDropped {
             val dragBoard = it.dragboard
             if (dragBoard.hasFiles()) {
-//                flattenAndAddFiles(dragBoard.files)
-                mapFiles(dragBoard.files)
+                controller.flattenAndAddFiles(dragBoard.files)
                 it.isDropCompleted = true
             } else it.isDropCompleted = false
 
@@ -251,31 +195,4 @@ class DrawableView2 : View("Drawables2") {
         }
     }
 
-    private fun flattenAndAddFiles(newFiles: List<File>) {
-        val flattenedFiles = ArrayList<File>()
-        newFiles.forEach { file ->
-            if (file.isDirectory) flattenedFiles.addAll(file.walkTopDown().toList().filter { it.isFile })
-            else flattenedFiles.add(file)
-        }
-
-        files.addAll(flattenedFiles.filter { !files.contains(it) })
-        destinationPath.set(flattenedFiles[0].toPath().parent)
-        updateProgress(0.0, null)
-    }
-
-    private fun mapFiles(newFiles: List<File>) {
-        val flat = ArrayList<File>()
-        newFiles.forEach {
-            when {
-                it.isDirectory -> flat.addAll(it.walkTopDown().toList().filter { file -> file.isFile })
-                else -> flat.add(it)
-            }
-        }
-        folders.putAll(newFiles.groupBy { it.parentFile })
-    }
-
-    private fun chooseDestination() {
-        val selectedDestination = chooseDirectory("Select Destination", File("/"))
-        selectedDestination?.let { destinationPath.set(selectedDestination.toPath()) }
-    }
 }

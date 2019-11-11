@@ -17,6 +17,7 @@ class MainView : View("Icon Pack Tools") {
         tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
         hgrow = Priority.ALWAYS
         tab<DrawableView>()
+        tab<DrawableView2>()
         tab<FilterMapperView>()
         tab("Resources") { isDisable = true }
         tab("Automation") { isDisable = true }

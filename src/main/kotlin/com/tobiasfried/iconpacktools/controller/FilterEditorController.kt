@@ -30,10 +30,9 @@ class FilterEditorController : Controller() {
     val validFile = SimpleBooleanProperty(true)
     val acceptedFiles = listOf(FilterFormat.APPFILTER.filename)
 
-//    val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
-//        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
-//    }, filterFile)
-    var filterDocumentModel = FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
+    val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
+        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
+    }, filterFile)
 
     fun chooseFile() {
         val files = chooseFile("Select App Filter File", arrayOf(FileChooser.ExtensionFilter("XML", "*.xml")), FileChooserMode.Single)
@@ -46,7 +45,6 @@ class FilterEditorController : Controller() {
         try {
             xmlMaker.validateAppFilter(file)
             filterFile.set(file)
-            filterDocumentModel = FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(file))
             validFile.set(true)
 
         } catch (e: Exception) {

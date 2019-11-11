@@ -3,11 +3,13 @@ package com.tobiasfried.iconpacktools.controller
 import com.tobiasfried.iconpacktools.controller.DrawableOutput.*
 import javafx.beans.binding.Bindings
 import javafx.beans.binding.BooleanBinding
+import javafx.beans.binding.ObjectBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
+import javafx.collections.ObservableMap
 import javafx.stage.FileChooser
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
@@ -39,8 +41,8 @@ class DrawableController : Controller() {
     val statusComplete: BooleanBinding = Bindings.createBooleanBinding(Callable { generateProgress.value.equals(1.0) }, generateProgress)
 
     val files = FXCollections.observableArrayList<File>()!!
-    private val folders = Bindings.createObjectBinding(Callable {
-        files.groupBy { File(it.parent) }
+    val folders: ObjectBinding<ObservableMap<File, List<File>>> = Bindings.createObjectBinding(Callable {
+        files.groupBy { File(it.parent) }.asObservable()
     }, files)
     val selectedFiles = SimpleObjectProperty<File>()
 

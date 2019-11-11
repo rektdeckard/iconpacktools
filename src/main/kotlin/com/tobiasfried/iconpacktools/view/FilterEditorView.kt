@@ -72,7 +72,7 @@ class FilterEditorView : View("Filter Editor") {
             }
         }
 
-        center = tableview(controller.filterDocumentModel.appComponents) {
+        center = tableview(controller.filterDocumentModel.select { it.appComponents }) {
             borderpaneConstraints {
                 marginTop = 16.0
                 marginLeftRight(8.0)
