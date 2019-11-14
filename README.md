@@ -1,7 +1,7 @@
 <img src="https://i.imgur.com/7oCSH5V.png" width="192" align="right" hspace="20" />
 
 # Icon Pack Tools
-A handy utility for Android icon pack creators to generate key assets and resources, and alleviate much of the manual work. Made a bunch of new icons and need to update your `drawable.xml` and `icon-pack.xml` files? Just drag and drop. Keeping track of your app filters in three places at once? No longer. Just create your `appfilter.xml`, and we'll generate `appmap.xml` and `theme_resources.xml` for you. Even merge app filter files from your icon requests into your master filter files.
+A handy utility for Android icon pack creators to generate key assets and resources, and alleviate much of the manual work. Made a bunch of new icons and need to update your `drawable.xml` and `icon-pack.xml` files? Just drag and drop. Keeping track of your app filters in three places at once? No longer. Simply create your `appfilter.xml`, and we'll generate `appmap.xml` and `theme_resources.xml` for you. You can even merge app filter files from your icon requests into your master filter files using the integrated editor.
 
 [![GitHub stars](https://img.shields.io/github/stars/rektdeckard/iconpacktools?style=flat-square&label=Star)](https://github.com/rektdeckard/iconpacktools)
 [![GitHub forks](https://img.shields.io/github/forks/rektdeckard/iconpacktools?style=flat-square&label=Fork)](https://github.com/rektdeckard/iconpacktools/fork)
