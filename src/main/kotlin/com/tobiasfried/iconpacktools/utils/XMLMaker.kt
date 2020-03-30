@@ -34,6 +34,7 @@ class XMLMaker(val updateProgress: (Double, String?) -> Unit) {
 
     fun createFilterDocumentFromAppFilter(file: File): FilterDocument {
         val baseDocument = FilterDocument()
+        if (!file.canRead()) return baseDocument
 
         val inputSource = InputSource(StringReader(file.readText()))
         val doc = dBuilder.parse(inputSource)
