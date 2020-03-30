@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.tobiasfried'
-version = '0.1.3'
+version = '0.2.1'
 sourceCompatibility = '1.8'
 
 publishing {

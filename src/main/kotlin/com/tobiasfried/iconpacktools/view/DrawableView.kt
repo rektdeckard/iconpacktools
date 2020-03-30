@@ -69,7 +69,7 @@ class DrawableView : View("Drawables") {
                 text("This tool will generate a ")
                 text("drawable.xml").addClass(italic)
                 text(" and ")
-                text("icon-pack.xml").addClass(italic)
+                text("icon_pack.xml").addClass(italic)
                 text(" file for the provided ")
                 text(".png").addClass(italic)
                 text(" icons. ")
@@ -85,7 +85,7 @@ class DrawableView : View("Drawables") {
                                 checkbox("Generate drawable.xml").bind(controller.generateDrawable)
                             }
                             field {
-                                checkbox("Generate icon-pack.xml").bind(controller.generateIconPack)
+                                checkbox("Generate icon_pack.xml").bind(controller.generateIconPack)
                             }
                             field {
                                 checkbox("Use directories as category names").bind(controller.useCategories)

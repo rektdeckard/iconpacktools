@@ -143,7 +143,7 @@ class DrawableController : Controller() {
         val category = doc.createElement("category").also { it.setAttribute("title", "All") }
         resources.appendChild(category)
 
-        files.sortedBy { it.name }.forEachIndexed { index, entry ->
+        files.distinctBy { it.name }.sortedBy { it.name }.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
             item.setAttribute("drawable", entry.nameWithoutExtension)
             resources.appendChild(item)
@@ -188,13 +188,12 @@ class DrawableController : Controller() {
     }
 
     private fun createIconPackDocument(): Document {
-        val sorted = files.sortedBy { it.name }
+        val sorted = files.distinctBy { it.name }.sortedBy { it.name }
 
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources").also {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
             it.setAttribute("tools:ignore", "MissingTranslation")
-            it.appendChild(doc.createTextNode("\n\n"))
         }
 
         val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
@@ -206,20 +205,6 @@ class DrawableController : Controller() {
             it.appendChild(item)
         }
 
-        with(resources) {
-            appendChild(doc.createComment(" Filter Categories "))
-            appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
-            appendChild(filters)
-            appendChild(doc.createTextNode("\n\n"))
-            appendChild(doc.createComment(" All Drawables "))
-            appendChild(all)
-            appendChild(doc.createTextNode("\n\n"))
-            appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
-            appendChild(previews)
-            appendChild(doc.createTextNode("\n\n"))
-        }
-        doc.appendChild(resources)
-
         sorted.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
             item.appendChild(doc.createTextNode(entry.nameWithoutExtension))
@@ -229,6 +214,17 @@ class DrawableController : Controller() {
             updateProgress(index / sorted.size.toDouble(), "$index / ${sorted.size}")
         }
 
+        with(resources) {
+            appendChild(doc.createComment(" Filter Categories "))
+            appendChild(doc.createComment(" Make sure the category names are the same as the other arrays "))
+            appendChild(filters)
+            appendChild(doc.createComment(" All Drawables "))
+            appendChild(all)
+            appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
+            appendChild(previews)
+        }
+
+        doc.appendChild(resources)
         return doc
     }
 
