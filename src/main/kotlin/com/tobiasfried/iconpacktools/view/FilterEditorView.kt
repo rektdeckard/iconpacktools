@@ -4,10 +4,8 @@ import com.tobiasfried.iconpacktools.app.Styles
 import com.tobiasfried.iconpacktools.app.Styles.Companion.bold
 import com.tobiasfried.iconpacktools.app.Styles.Companion.fieldLabel
 import com.tobiasfried.iconpacktools.controller.FilterEditorController
-import com.tobiasfried.iconpacktools.controller.FilterMapperController
 import com.tobiasfried.iconpacktools.model.AppComponent
 import com.tobiasfried.iconpacktools.utils.FileNameConverter
-import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
@@ -31,9 +29,9 @@ class FilterEditorView : View("Filter Editor") {
                 }
             }.addClass(bold)
             textflow {
-                text("This tool allows for straightforward graphical editing of a new or existing ")
+                text("This tool allows for graphical editing of a new or existing ")
                 text("appfilter.xml").addClass(Styles.italic)
-                text(" file. Select your project's app filter and edit in place, or add one from your icon requests.")
+                text(" file. Select your project's app filter and edit in place, add one from your icon requests, or merge the two.")
             }
             form {
                 fieldset("Input File") {
@@ -73,45 +71,55 @@ class FilterEditorView : View("Filter Editor") {
             }
         }
 
-        center = tableview(controller.filterDocumentModel.select { it.appComponents }) {
-            borderpaneConstraints {
-                marginTop = 16.0
-                marginLeftRight(8.0)
-                vgrow = Priority.ALWAYS
-                hgrow = Priority.ALWAYS
-            }
-            enableCellEditing()
-            enableDirtyTracking()
-            regainFocusAfterEdit()
-            smartResize()
-            isTableMenuButtonVisible = true
-            isFocusTraversable = true
+        center = squeezebox {
+            fold(expanded = true) {
+                bind(controller.filterFile, true, FileNameConverter())
+                tableview(controller.filterDocumentModel.select { it.appComponents }) {
+                    borderpaneConstraints {
+                        marginTop = 16.0
+                        marginLeftRight(8.0)
+                        vgrow = Priority.ALWAYS
+                        hgrow = Priority.ALWAYS
+                    }
+                    enableCellEditing()
+                    enableDirtyTracking()
+                    regainFocusAfterEdit()
+                    smartResize()
+                    isTableMenuButtonVisible = true
+                    isFocusTraversable = true
 
-            column("Package", AppComponent::packageName).makeEditable()
-            column("Activity", AppComponent::activityName).makeEditable()
-            column("Drawable", AppComponent::drawable).makeEditable()
-        }
+//                    contextmenu {
+//                        item("Revert Changes") {
+//                        }
+//                    }
 
-        bottom = vbox(spacing = 8) {
-            buttonbar {
-                vboxConstraints {
-                    marginTop = 8.0
-                    marginRight = 8.0
-                }
-                button("Commit") {
-                    enableWhen(controller.filterFile.isNotNull.and(controller.validFile))
-                    action { controller.commit() }
+                    column("Package", AppComponent::packageName).makeEditable()
+                    column("Activity", AppComponent::activityName).makeEditable()
+                    column("Drawable", AppComponent::drawable).makeEditable()
                 }
             }
-            stackpane {
-                borderpaneConstraints { marginTop = 8.0 }
-                progressbar {
-                    useMaxWidth = true
-                    bind(controller.generateProgress)
+
+            bottom = vbox(spacing = 8) {
+                buttonbar {
+                    vboxConstraints {
+                        marginTop = 8.0
+                        marginRight = 8.0
+                    }
+                    button("Commit") {
+                        enableWhen(controller.filterFile.isNotNull.and(controller.validFile))
+                        action { controller.commit() }
+                    }
                 }
-                label {
-                    bind(controller.statusMessage)
-                    toggleClass(Styles.statusSuccess, controller.statusComplete)
+                stackpane {
+                    borderpaneConstraints { marginTop = 8.0 }
+                    progressbar {
+                        useMaxWidth = true
+                        bind(controller.generateProgress)
+                    }
+                    label {
+                        bind(controller.statusMessage)
+                        toggleClass(Styles.statusSuccess, controller.statusComplete)
+                    }
                 }
             }
         }
