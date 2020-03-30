@@ -1,6 +1,5 @@
 package com.tobiasfried.iconpacktools.controller
 
-import com.tobiasfried.iconpacktools.model.FilterDocument
 import com.tobiasfried.iconpacktools.model.FilterDocumentModel
 import com.tobiasfried.iconpacktools.utils.XMLMaker
 import javafx.beans.binding.Bindings
@@ -31,7 +30,7 @@ class FilterEditorController : Controller() {
     val acceptedFiles = listOf(FilterFormat.APPFILTER.filename)
 
     val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
-        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
+        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile?.value ?: File("")))
     }, filterFile)
 
     fun chooseFile() {
