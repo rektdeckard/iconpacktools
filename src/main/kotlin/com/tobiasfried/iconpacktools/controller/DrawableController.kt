@@ -143,12 +143,12 @@ class DrawableController : Controller() {
         val category = doc.createElement("category").also { it.setAttribute("title", "All") }
         resources.appendChild(category)
 
-        for (i in 0..files.lastIndex) {
+        files.sortedBy { it.name }.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
-            item.setAttribute("drawable", files[i].nameWithoutExtension)
+            item.setAttribute("drawable", entry.nameWithoutExtension)
             resources.appendChild(item)
 
-            updateProgress(i / files.size.toDouble(), "$i / ${files.size}")
+            updateProgress(index / files.size.toDouble(), "$index / ${files.size}")
         }
 
         doc.appendChild(resources)
@@ -160,26 +160,28 @@ class DrawableController : Controller() {
 
         val doc = dBuilder.newDocument()
         val resources = doc.createElement("resources")
+        resources.appendChild(doc.createTextNode("\n\n"))
 
-        folders.value.entries.forEach { entry ->
-            val category = doc.createElement("category").also { it.setAttribute("title", entry.key.name) }
+        folders.value.entries.sortedBy { it.key.name }.forEach { entry ->
+            val category = doc.createElement("category").also { it.setAttribute("title", entry.key.name.capitalize()) }
             resources.appendChild(category)
-            entry.value.forEach {
+            entry.value.sortedBy { it.name }.forEach {
                 val item = doc.createElement("item")
                 item.setAttribute("drawable", it.nameWithoutExtension)
                 resources.appendChild(item)
             }
+            resources.appendChild(doc.createTextNode("\n\n"))
         }
 
         val all = doc.createElement("category").also { it.setAttribute("title", "All") }
         resources.appendChild(all)
-        val flat = folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }
-        for (i in 0..flat.lastIndex) {
+        folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
-            item.setAttribute("drawable", flat[i].nameWithoutExtension)
+            item.setAttribute("drawable", entry.nameWithoutExtension)
             resources.appendChild(item)
-            updateProgress(i / count.toDouble(), "$i / $count")
+            updateProgress(index / count.toDouble(), "$index / $count")
         }
+        resources.appendChild(doc.createTextNode("\n\n"))
 
         doc.appendChild(resources)
         return doc
@@ -192,7 +194,9 @@ class DrawableController : Controller() {
         val resources = doc.createElement("resources").also {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
             it.setAttribute("tools:ignore", "MissingTranslation")
+            it.appendChild(doc.createTextNode("\n\n"))
         }
+
         val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
         val previews = doc.createElement("string-array").also { it.setAttribute("name", "icons_preview") }
         val filters = doc.createElement("string-array").also {
@@ -206,20 +210,23 @@ class DrawableController : Controller() {
             appendChild(doc.createComment(" Filter Categories "))
             appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
             appendChild(filters)
+            appendChild(doc.createTextNode("\n\n"))
             appendChild(doc.createComment(" All Drawables "))
             appendChild(all)
+            appendChild(doc.createTextNode("\n\n"))
             appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
             appendChild(previews)
+            appendChild(doc.createTextNode("\n\n"))
         }
         doc.appendChild(resources)
 
-        for (i in 0..sorted.lastIndex) {
+        sorted.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
-            item.appendChild(doc.createTextNode(sorted[i].nameWithoutExtension))
+            item.appendChild(doc.createTextNode(entry.nameWithoutExtension))
             all.appendChild(item)
             previews.appendChild(doc.importNode(item, true))
 
-            updateProgress(i / sorted.size.toDouble(), "$i / ${sorted.size}")
+            updateProgress(index / sorted.size.toDouble(), "$index / ${sorted.size}")
         }
 
         return doc
@@ -233,40 +240,45 @@ class DrawableController : Controller() {
             it.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
             it.setAttribute("tools:ignore", "MissingTranslation")
         }
+
         val filters = doc.createElement("string-array").also { it.setAttribute("name", "icon_filters") }
-        with(resources) {
-            appendChild(doc.createComment(" Filter Categories "))
-            appendChild(doc.createComment(" Make sure the filters names are the same as the other arrays "))
-            appendChild(filters)
-        }
-        val previews = doc.createElement("string-array").also { it.setAttribute("name", "icons_preview") }
-        val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
-
-        folders.value.entries.forEach { entry ->
-
+        filters.appendChild(doc.createElement("item").also { it.appendChild(doc.createTextNode("all")) })
+        folders.value.entries.sortedBy { it.key.name }.forEach { entry ->
             filters.appendChild(doc.createElement("item").also { it.appendChild(doc.createTextNode(entry.key.name)) })
+        }
+
+        val categories = folders.value.entries.sortedBy { it.key.name }.map { entry ->
             val category = doc.createElement("string-array").also { it.setAttribute("name", entry.key.name) }
-            entry.value.forEach {
+            entry.value.sortedBy { it.name }.forEach {
                 val item = doc.createElement("item")
                 item.appendChild(doc.createTextNode(it.nameWithoutExtension))
                 category.appendChild(item)
             }
 
-            resources.appendChild(category)
+            category
         }
 
-
-        val flat = folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }
-        for (i in 0..flat.lastIndex) {
+        val previews = doc.createElement("string-array").also { it.setAttribute("name", "icons_preview") }
+        val all = doc.createElement("string-array").also { it.setAttribute("name", "all") }
+        folders.value.values.flatten().distinctBy { it.name }.sortedBy { it.name }.forEachIndexed { index, entry ->
             val item = doc.createElement("item")
-            item.appendChild(doc.createTextNode(flat[i].nameWithoutExtension))
+            item.appendChild(doc.createTextNode(entry.nameWithoutExtension))
             all.appendChild(item)
             previews.appendChild(item.cloneNode(true))
 
-            updateProgress(i / count.toDouble(), "$i / $count")
+            updateProgress(index / count.toDouble(), "$index / $count")
         }
 
-        with(resources) {
+        with (resources) {
+            appendChild(doc.createComment(" Filter Categories "))
+            appendChild(doc.createComment(" Make sure the category names are the same as the other arrays "))
+            appendChild(filters)
+            appendChild(doc.createComment(" Icon Categories "))
+        }
+
+        categories.forEach {resources.appendChild(it) }
+
+        with (resources) {
             appendChild(doc.createComment(" All Drawables "))
             appendChild(all)
             appendChild(doc.createComment(" Drawables to include in Dashboard Preview "))
@@ -278,7 +290,7 @@ class DrawableController : Controller() {
     }
 
     private fun exportXML(document: Document, type: DrawableOutput) {
-        val filename = if (type == DRAWABLE) "drawable.xml" else "icon-pack.xml"
+        val filename = if (type == DRAWABLE) "drawable.xml" else "icon_pack.xml"
         if (overwriteExisting.value || !File(destinationPath.value.toString(), filename).exists()) {
             transformer.transform(DOMSource(document), StreamResult(File(destinationPath.value.toString(), filename)))
             updateProgress(1.0, "COMPLETE")

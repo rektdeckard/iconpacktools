@@ -1,6 +1,5 @@
 package com.tobiasfried.iconpacktools.controller
 
-import com.tobiasfried.iconpacktools.model.FilterDocument
 import com.tobiasfried.iconpacktools.model.FilterDocumentModel
 import com.tobiasfried.iconpacktools.utils.XMLMaker
 import javafx.beans.binding.Bindings
@@ -26,14 +25,13 @@ class FilterEditorController : Controller() {
 
     private val xmlMaker = XMLMaker(updateProgress)
 
-    val filterFile = SimpleObjectProperty<File>(File("C:\\Users\\Tobias Fried\\Google Drive\\Phosphor\\scratch\\appfilter.xml"))
+    val filterFile = SimpleObjectProperty<File>()
     val validFile = SimpleBooleanProperty(true)
     val acceptedFiles = listOf(FilterFormat.APPFILTER.filename)
 
-//    val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
-//        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
-//    }, filterFile)
-    var filterDocumentModel = FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value))
+    val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
+        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile?.value ?: File("")))
+    }, filterFile)
 
     fun chooseFile() {
         val files = chooseFile("Select App Filter File", arrayOf(FileChooser.ExtensionFilter("XML", "*.xml")), FileChooserMode.Single)
@@ -46,10 +44,10 @@ class FilterEditorController : Controller() {
         try {
             xmlMaker.validateAppFilter(file)
             filterFile.set(file)
-            filterDocumentModel = FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(file))
             validFile.set(true)
 
         } catch (e: Exception) {
+//            println(e.message)
             validFile.set(false)
         }
         updateProgress(0.0, null)

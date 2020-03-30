@@ -12,7 +12,7 @@ data class FilterDocument(val version: Int = 1) {
 
     override fun toString(): String {
         val str = StringBuilder()
-        deviceDefaults.forEach{
+        deviceDefaults.forEach {
             str.append(it.packageName)
             str.append(" # ")
             str.append(it.drawable)
