@@ -150,6 +150,8 @@ class DrawableView : View("Drawables") {
                 toggleClass(Styles.statusSuccess, controller.statusComplete)
             }
         }
+
+        shortcut("Ctrl+Q", ::close)
     }
 
     init {
