@@ -13,11 +13,11 @@ class MainView : View("Icon Pack Tools") {
 
     override val root = tabpane {
         prefWidth = 1000.0
-        prefHeight = 600.00
+        prefHeight = 750.00
         tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
         hgrow = Priority.ALWAYS
         tab<DrawableView>()
-        tab<FilterMapperView>()
+        tab<FilterView>()
         tab("Resources") { isDisable = true }
         tab("Automation") { isDisable = true }
     }

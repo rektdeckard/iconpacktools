@@ -27,10 +27,10 @@ class FilterEditorController : Controller() {
 
     val filterFile = SimpleObjectProperty<File>()
     val validFile = SimpleBooleanProperty(true)
-    val acceptedFiles = listOf(FilterFormat.APPFILTER.filename)
+    private val acceptedFiles = listOf(FilterFormat.APPFILTER.filename)
 
     val filterDocumentModel: ObjectBinding<FilterDocumentModel> = Bindings.createObjectBinding(Callable{
-        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile?.value ?: File("")))
+        FilterDocumentModel(xmlMaker.createFilterDocumentFromAppFilter(filterFile.value ?: File("")))
     }, filterFile)
 
     fun chooseFile() {

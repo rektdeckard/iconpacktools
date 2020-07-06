@@ -29,7 +29,7 @@ class DrawableController : Controller() {
     val useCategories = SimpleBooleanProperty(false)
     val overwriteExisting = SimpleBooleanProperty(false)
     val specifyPath = SimpleBooleanProperty(false)
-    val destinationPath = SimpleObjectProperty<Path>(Paths.get(""))
+    val destinationPath = SimpleObjectProperty(Paths.get(""))
     val validDestination: BooleanBinding = Bindings.createBooleanBinding(Callable {
         !specifyPath.value || File(destinationPath.value.toString().trim()).exists()
     }, specifyPath, destinationPath)
